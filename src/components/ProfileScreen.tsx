@@ -1,13 +1,11 @@
 import React from 'react';
-import { User, ShieldCheck, Mail, Building2, Leaf, Award, RotateCcw, Sparkles, ExternalLink, LogOut } from 'lucide-react';
+import { User, ShieldCheck, Leaf, Award, LogOut } from 'lucide-react';
 import { ItemRegistration, RewardRedemption, StudentUser } from '../types';
 
 interface ProfileScreenProps {
   user: StudentUser;
   registrations: ItemRegistration[];
   redemptions: RewardRedemption[];
-  onResetData: () => void;
-  onReAuth: () => void;
   onLogout: () => void;
 }
 
@@ -15,14 +13,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   user,
   registrations,
   redemptions,
-  onResetData,
-  onReAuth,
   onLogout,
 }) => {
   // Calculate eco impact
   const totalItems = registrations.length;
   const co2SavedKg = (totalItems * 2.8).toFixed(1);
-  const treesPlanted = (totalItems * 0.4).toFixed(1);
 
   return (
     <div className="min-h-[calc(100vh-7rem)] bg-[#F4F7F5] pb-28 pt-4 px-4">
@@ -59,8 +54,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
               <button
                 type="button"
-                onClick={onReAuth}
-                className="rounded-xl bg-[#014B43] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#013B35] transition-colors"
+                onClick={onLogout}
+                className="rounded-xl bg-[#014B43] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#013B35] transition-colors cursor-pointer"
               >
                 인증하기
               </button>
@@ -115,33 +110,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
 
         {/* Action Options */}
-        <div className="rounded-2xl border border-[#E3E8E5] bg-white p-2 space-y-1 text-xs font-semibold text-[#4B5563]">
+        <div className="rounded-2xl border border-[#E3E8E5] bg-white p-2 text-xs font-semibold text-[#4B5563]">
           <button
             type="button"
             onClick={onLogout}
-            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#F4F7F5] text-left transition-colors text-[#1E2923]"
+            className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-[#F4F7F5] text-left transition-colors text-[#DC2626] cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <LogOut className="h-4 w-4 text-[#4B5563]" />
-              <span>로그아웃 (학생 인증 화면으로)</span>
+              <LogOut className="h-4 w-4 text-[#DC2626]" />
+              <span className="font-bold">로그아웃</span>
             </div>
-            <span className="text-[11px] text-[#9CA3AF]">인증 해제</span>
-          </button>
-          <button
-            type="button"
-            onClick={onReAuth}
-            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#F4F7F5] text-left transition-colors"
-          >
-            <span>다른 학번 / 이메일로 다시 인증</span>
-            <RotateCcw className="h-4 w-4 text-[#9CA3AF]" />
-          </button>
-          <button
-            type="button"
-            onClick={onResetData}
-            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 text-red-600 text-left transition-colors"
-          >
-            <span>테스트 데이터 초기화 (처음 상태로)</span>
-            <RotateCcw className="h-4 w-4 text-red-500" />
+            <span className="text-[11px] text-[#9CA3AF]">인증 화면으로 이동</span>
           </button>
         </div>
       </div>

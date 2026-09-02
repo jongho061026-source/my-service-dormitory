@@ -19,16 +19,8 @@ import {
 } from './lib/firestoreService';
 
 export default function App() {
-  const [user, setUser] = useState<StudentUser | null>(() => {
-    const saved = localStorage.getItem('yonsei_eco_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>(() => {
-    const saved = localStorage.getItem('yonsei_eco_user');
-    const parsedUser = saved ? JSON.parse(saved) : null;
-    return parsedUser?.isVerified || parsedUser?.isGuest ? 'register' : 'auth';
-  });
+  const [user, setUser] = useState<StudentUser | null>(null);
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>('auth');
 
   const [registrations, setRegistrations] = useState<ItemRegistration[]>(() => {
     const saved = localStorage.getItem('yonsei_eco_registrations');
@@ -181,21 +173,6 @@ export default function App() {
     setCurrentScreen('auth');
   };
 
-  // Reset to initial state
-  const handleResetData = () => {
-    if (window.confirm('모든 인계 및 마일리지 데이터를 초기화하시겠습니까? (로그인 상태도 해제됩니다)')) {
-      setUser(null);
-      setRegistrations([]);
-      setRedemptions([]);
-      setCurrentScreen('auth');
-      localStorage.clear();
-    }
-  };
-
-  const handleReAuth = () => {
-    handleLogout();
-  };
-
   const handleNavigate = (screen: ScreenType) => {
     if (!user && screen !== 'auth') {
       setCurrentScreen('auth');
@@ -263,8 +240,6 @@ export default function App() {
             user={user}
             registrations={registrations}
             redemptions={redemptions}
-            onResetData={handleResetData}
-            onReAuth={handleReAuth}
             onLogout={handleLogout}
           />
         )}

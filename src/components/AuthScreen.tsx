@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, CheckCircle2, ShieldCheck, Sparkles, ArrowRight, Building2, Leaf, User } from 'lucide-react';
+import { Mail, CheckCircle2, ShieldCheck, Sparkles, ArrowRight, Building2, Leaf, User, AlertCircle, Loader2 } from 'lucide-react';
 import { StudentUser } from '../types';
-import { SONGDO_DORM_GROUPS, YONSEI_DORMS } from '../data/mockData';
+import { SONGDO_DORM_GROUPS } from '../data/mockData';
 import { getUserFromFirestore } from '../lib/firestoreService';
 
 interface AuthScreenProps {
@@ -11,10 +11,12 @@ interface AuthScreenProps {
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [emailPrefix, setEmailPrefix] = useState('');
   const [authCode, setAuthCode] = useState('');
-  const [sentCode, setSentCode] = useState<string | null>(null);
+  const [isCodeRequested, setIsCodeRequested] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [timer, setTimer] = useState(180);
   const [timerActive, setTimerActive] = useState(false);
+  const [successInfo, setSuccessInfo] = useState('');
   const [selectedDorm, setSelectedDorm] = useState('송도학사 제1기숙사 A동');
   const [roomNumber, setRoomNumber] = useState('');
   const [studentName, setStudentName] = useState('연세학우');
@@ -32,58 +34,104 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     return () => clearInterval(interval);
   }, [timerActive, timer]);
 
-  const handleSendCode = () => {
+  const handleSendCode = async () => {
     if (!emailPrefix.trim()) {
       setErrorMsg('연세대학교 이메일 아이디를 입력해주세요.');
       return;
     }
     setErrorMsg('');
+    setSuccessInfo('');
     setIsSending(true);
 
-    setTimeout(() => {
-      // Generate a friendly 4-digit code (e.g. 1885 - founding year of Yonsei)
-      const generatedCode = '1885';
-      setSentCode(generatedCode);
-      setAuthCode(generatedCode); // auto-fill for frictionless UX
-      setIsSending(false);
+    const fullEmail = `${emailPrefix.trim()}@yonsei.ac.kr`;
+
+    try {
+      const response = await fetch('/api/auth/send-verification-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fullEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || '인증번호 발송에 실패했습니다.');
+      }
+
+      setIsCodeRequested(true);
+      setAuthCode('');
       setTimer(180);
       setTimerActive(true);
-    }, 600);
+      setSuccessInfo(data.message || `${fullEmail} 메일함으로 인증번호 4자리를 발송했습니다.`);
+    } catch (err: any) {
+      setErrorMsg(err.message || '인증 메일 발송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleVerifyAndStart = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sentCode) {
-      setErrorMsg('먼저 [인증번호 받기]를 눌러주세요.');
-      return;
-    }
-    if (authCode.trim() !== sentCode && authCode.trim() !== '1885' && authCode.trim() !== '1234') {
-      setErrorMsg('인증번호가 일치하지 않습니다. 다시 확인해주세요.');
+    setErrorMsg('');
+
+    if (!isCodeRequested) {
+      setErrorMsg('먼저 [웹메일로 인증번호 받기] 버튼을 눌러주세요.');
       return;
     }
 
-    // Check if user already exists in Firestore
-    let existingMileage = 0;
+    if (timer === 0) {
+      setErrorMsg('인증 유효시간(3분)이 만료되었습니다. 인증번호를 다시 받아주세요.');
+      return;
+    }
+
+    if (!authCode.trim() || authCode.trim().length !== 4) {
+      setErrorMsg('웹메일로 수신된 4자리 인증번호를 정확히 입력해주세요.');
+      return;
+    }
+
+    const fullEmail = `${emailPrefix.trim()}@yonsei.ac.kr`;
+    setIsVerifying(true);
+
     try {
-      const existingDoc = await getUserFromFirestore(`${emailPrefix.trim()}@yonsei.ac.kr`);
-      if (existingDoc && typeof existingDoc.totalMileage === 'number') {
-        existingMileage = existingDoc.totalMileage;
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fullEmail, code: authCode.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || '인증번호가 일치하지 않습니다.');
       }
-    } catch {
-      // ignore
+
+      // Check if user already exists in Firestore
+      let existingMileage = 0;
+      try {
+        const existingDoc = await getUserFromFirestore(fullEmail);
+        if (existingDoc && typeof existingDoc.totalMileage === 'number') {
+          existingMileage = existingDoc.totalMileage;
+        }
+      } catch {
+        // ignore
+      }
+
+      const newUser: StudentUser = {
+        email: fullEmail,
+        isVerified: true,
+        name: studentName.trim() || '연세학우',
+        studentId: '2026123456',
+        dormBuilding: selectedDorm,
+        roomNumber: roomNumber || '301호',
+        totalMileage: existingMileage,
+      };
+
+      onAuthSuccess(newUser);
+    } catch (err: any) {
+      setErrorMsg(err.message || '인증 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsVerifying(false);
     }
-
-    const newUser: StudentUser = {
-      email: `${emailPrefix.trim()}@yonsei.ac.kr`,
-      isVerified: true,
-      name: studentName.trim() || '연세학우',
-      studentId: '2026123456',
-      dormBuilding: selectedDorm,
-      roomNumber: roomNumber || '301호',
-      totalMileage: existingMileage,
-    };
-
-    onAuthSuccess(newUser);
   };
 
   const handleGuestLogin = async () => {
@@ -118,7 +166,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col justify-between bg-[#F4F7F5] px-4 py-6">
-      <div className="mx-auto w-full max-w-sm space-y-6">
+      <div className="mx-auto w-full max-w-sm space-y-5">
         {/* Brand Banner */}
         <div className="text-center space-y-2 pt-2">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#014B43]/10 px-3 py-1 text-xs font-semibold text-[#014B43]">
@@ -135,7 +183,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         </div>
 
         {/* Verification Card */}
-        <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 shadow-sm space-y-5">
+        <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 shadow-sm space-y-4">
           <div className="flex items-center gap-2 border-b border-[#F0F3F1] pb-3">
             <ShieldCheck className="h-5 w-5 text-[#014B43]" />
             <h3 className="text-base font-bold text-[#1E2923]">
@@ -160,6 +208,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                     value={emailPrefix}
                     onChange={(e) => setEmailPrefix(e.target.value)}
                     placeholder="student_id"
+                    disabled={isSending || isVerifying}
                     className="w-full rounded-xl border border-[#D0D9D4] bg-[#F9FBFA] py-2.5 pl-3 pr-2 text-sm text-[#1E2923] focus:border-[#014B43] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#014B43]"
                   />
                 </div>
@@ -175,11 +224,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                 id="btn-request-auth-code"
                 type="button"
                 onClick={handleSendCode}
-                disabled={isSending}
-                className="w-full rounded-xl bg-[#E7F0EC] py-2.5 text-xs font-bold text-[#014B43] hover:bg-[#D6E6DF] active:scale-[0.99] transition-all flex items-center justify-center gap-1.5"
+                disabled={isSending || isVerifying}
+                className="w-full rounded-xl bg-[#E7F0EC] py-2.5 text-xs font-bold text-[#014B43] hover:bg-[#D6E6DF] active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                <Mail className="h-3.5 w-3.5" />
-                {sentCode ? '인증번호 재전송' : '인증번호 받기'}
+                {isSending ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>인증 메일 전송 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-3.5 w-3.5" />
+                    <span>{isCodeRequested ? '인증번호 재전송' : '웹메일로 인증번호 받기'}</span>
+                  </>
+                )}
                 {timerActive && (
                   <span className="ml-1 text-[11px] text-[#D97706] font-semibold">
                     ({formatTimer(timer)})
@@ -188,28 +246,41 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               </button>
             </div>
 
+            {/* Success Sent Notification */}
+            {successInfo && (
+              <div className="rounded-xl border border-[#A7F3D0] bg-[#ECFDF5] p-3 text-xs text-[#065F46] flex items-start gap-2 animate-fadeIn">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#059669] mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold">인증 메일 발송 완료</p>
+                  <p className="text-[11px] text-[#047857] leading-relaxed">
+                    연세대학교 웹메일 수신함을 확인하고 도착한 4자리 인증번호를 아래에 입력해 주세요.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Auth Code Input */}
-            {sentCode && (
+            {isCodeRequested && (
               <div className="space-y-1.5 animate-fadeIn">
                 <div className="flex items-center justify-between">
                   <label
                     htmlFor="input-auth-code"
                     className="text-xs font-semibold text-[#4B5563]"
                   >
-                    인증번호 4자리
+                    메일로 받은 인증번호 4자리
                   </label>
-                  <span className="text-[11px] text-[#059669] font-medium">
-                    인증번호가 자동 입력되었습니다
+                  <span className="text-[11px] text-[#D97706] font-medium">
+                    남은 시간 {formatTimer(timer)}
                   </span>
                 </div>
                 <input
                   id="input-auth-code"
                   type="text"
-                  maxLength={6}
+                  maxLength={4}
                   value={authCode}
-                  onChange={(e) => setAuthCode(e.target.value)}
-                  placeholder="예: 1885"
-                  className="w-full rounded-xl border border-[#014B43] bg-white py-2.5 px-3 text-center text-base font-bold tracking-widest text-[#014B43] focus:outline-none focus:ring-2 focus:ring-[#014B43]/20"
+                  onChange={(e) => setAuthCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="4자리 숫자 입력"
+                  className="w-full rounded-xl border border-[#014B43] bg-white py-3 px-3 text-center text-lg font-black tracking-widest text-[#014B43] focus:outline-none focus:ring-2 focus:ring-[#014B43]/20"
                 />
               </div>
             )}
@@ -255,19 +326,30 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             </div>
 
             {errorMsg && (
-              <p className="text-xs text-[#DC2626] font-medium text-center bg-red-50 py-1.5 rounded-lg">
-                {errorMsg}
-              </p>
+              <div className="flex items-center gap-1.5 text-xs text-[#DC2626] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200">
+                <AlertCircle className="h-4 w-4 shrink-0 text-[#DC2626]" />
+                <span>{errorMsg}</span>
+              </div>
             )}
 
             {/* Start Button */}
             <button
               id="btn-auth-submit"
               type="submit"
-              className="mt-2 w-full rounded-xl bg-[#014B43] py-3.5 text-sm font-bold text-white shadow-md hover:bg-[#013B35] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+              disabled={isVerifying}
+              className="mt-2 w-full rounded-xl bg-[#014B43] py-3.5 text-sm font-bold text-white shadow-md hover:bg-[#013B35] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              인증 완료 및 시작하기
-              <ArrowRight className="h-4 w-4" />
+              {isVerifying ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>인증 확인 중...</span>
+                </>
+              ) : (
+                <>
+                  <span>인증 완료 및 시작하기</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
 
             {/* Divider */}
@@ -283,7 +365,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               id="btn-guest-login"
               type="button"
               onClick={handleGuestLogin}
-              className="w-full rounded-xl border border-[#D0D9D4] bg-[#F9FBFA] py-3 text-xs font-bold text-[#4B5563] hover:border-[#014B43] hover:bg-white hover:text-[#014B43] active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+              className="w-full rounded-xl border border-[#D0D9D4] bg-[#F9FBFA] py-3 text-xs font-bold text-[#4B5563] hover:border-[#014B43] hover:bg-white hover:text-[#014B43] active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <User className="h-4 w-4 text-[#6B7280]" />
               <span>로그인 없이 비회원으로 시작하기</span>
@@ -305,3 +387,4 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     </div>
   );
 };
+
