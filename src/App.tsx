@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ScreenType, StudentUser, ItemRegistration, RewardRedemption } from './types';
-import { SAMPLE_PRESETS } from './data/mockData';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { Drawer } from './components/Drawer';
@@ -19,30 +18,6 @@ import {
   subscribeUserRegistrations,
 } from './lib/firestoreService';
 
-const DEFAULT_USER: StudentUser = {
-  email: 'student26@yonsei.ac.kr',
-  isVerified: true,
-  name: '연세학우',
-  studentId: '2026123456',
-  dormBuilding: '송도학사 제1기숙사 A동',
-  roomNumber: '301호',
-  totalMileage: 2500,
-};
-
-const INITIAL_REGISTRATIONS: ItemRegistration[] = [
-  {
-    id: 'reg-demo-1',
-    dormBuilding: '송도학사 제1기숙사 A동',
-    roomNumber: '301호',
-    description: '세탁 및 건조 완료 수건 4장 & 침구 세트',
-    category: '침구/수건/생활잡화',
-    photos: [SAMPLE_PRESETS[0].url],
-    mileageEarned: 500,
-    createdAt: '2026. 09. 01 09:30',
-    status: 'COMPLETED',
-  },
-];
-
 export default function App() {
   const [user, setUser] = useState<StudentUser | null>(() => {
     const saved = localStorage.getItem('yonsei_eco_user');
@@ -57,7 +32,7 @@ export default function App() {
 
   const [registrations, setRegistrations] = useState<ItemRegistration[]>(() => {
     const saved = localStorage.getItem('yonsei_eco_registrations');
-    return saved ? JSON.parse(saved) : INITIAL_REGISTRATIONS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [redemptions, setRedemptions] = useState<RewardRedemption[]>(() => {
@@ -87,25 +62,34 @@ export default function App() {
 
   // Subscribe to real-time Firestore updates for redemptions and registrations when logged in
   useEffect(() => {
-    if (!user || user.isGuest) return;
+    if (!user) return;
 
     const unsubscribeRedemptions = subscribeUserRedemptions(user.email, (cloudRedemptions) => {
-      if (cloudRedemptions.length > 0) {
-        setRedemptions(cloudRedemptions);
-      }
+      setRedemptions(cloudRedemptions);
     });
 
     const unsubscribeRegistrations = subscribeUserRegistrations(user.email, (cloudRegs) => {
-      if (cloudRegs.length > 0) {
-        setRegistrations(cloudRegs);
-      }
+      setRegistrations(cloudRegs);
     });
 
     return () => {
       unsubscribeRedemptions();
       unsubscribeRegistrations();
     };
-  }, [user?.email, user?.isGuest]);
+  }, [user?.email]);
+
+  // Keep total mileage precisely calculated based on database records:
+  // (Total Earned from Registrations) - (Total Spent on Redemptions)
+  useEffect(() => {
+    if (!user) return;
+    const earned = registrations.reduce((sum, r) => sum + (r.mileageEarned || 500), 0);
+    const spent = redemptions.reduce((sum, r) => sum + (r.pointsSpent || 0), 0);
+    const calculatedBalance = Math.max(0, earned - spent);
+
+    if (user.totalMileage !== calculatedBalance) {
+      setUser((prev) => (prev ? { ...prev, totalMileage: calculatedBalance } : null));
+    }
+  }, [registrations, redemptions]);
 
   // Handle Authentication Completion
   const handleAuthSuccess = (verifiedUser: StudentUser) => {
@@ -201,7 +185,7 @@ export default function App() {
   const handleResetData = () => {
     if (window.confirm('모든 인계 및 마일리지 데이터를 초기화하시겠습니까? (로그인 상태도 해제됩니다)')) {
       setUser(null);
-      setRegistrations(INITIAL_REGISTRATIONS);
+      setRegistrations([]);
       setRedemptions([]);
       setCurrentScreen('auth');
       localStorage.clear();

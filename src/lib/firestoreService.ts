@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   setDoc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -17,6 +18,24 @@ import { ItemRegistration, RewardRedemption, StudentUser } from '../types';
 const USERS_COLLECTION = 'users';
 const REGISTRATIONS_COLLECTION = 'registrations';
 const REDEMPTIONS_COLLECTION = 'redemptions';
+
+/**
+ * Get student user doc from Firestore
+ */
+export async function getUserFromFirestore(email: string): Promise<StudentUser | null> {
+  try {
+    const userDocId = email.replace(/[@.]/g, '_');
+    const userRef = doc(db, USERS_COLLECTION, userDocId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      return snap.data() as StudentUser;
+    }
+    return null;
+  } catch (error) {
+    console.warn('Failed to get user from Firestore:', error);
+    return null;
+  }
+}
 
 /**
  * Save or update student user in Firestore

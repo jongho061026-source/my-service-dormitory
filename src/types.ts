@@ -50,10 +50,3 @@ export interface RewardRedemption {
   pickupLocation: string;
   voucherCode: string;
 }
-
-export interface SamplePhotoPreset {
-  id: string;
-  title: string;
-  category: string;
-  url: string;
-}

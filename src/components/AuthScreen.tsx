@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, CheckCircle2, ShieldCheck, Sparkles, ArrowRight, Building2, Leaf, User } from 'lucide-react';
 import { StudentUser } from '../types';
 import { SONGDO_DORM_GROUPS, YONSEI_DORMS } from '../data/mockData';
+import { getUserFromFirestore } from '../lib/firestoreService';
 
 interface AuthScreenProps {
   onAuthSuccess: (user: StudentUser) => void;
@@ -50,15 +51,26 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     }, 600);
   };
 
-  const handleVerifyAndStart = (e: React.FormEvent) => {
+  const handleVerifyAndStart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sentCode) {
       setErrorMsg('먼저 [인증번호 받기]를 눌러주세요.');
       return;
     }
     if (authCode.trim() !== sentCode && authCode.trim() !== '1885' && authCode.trim() !== '1234') {
-      setErrorMsg('인증번호가 일치하지 않습니다. (테스트용: 1885)');
+      setErrorMsg('인증번호가 일치하지 않습니다. 다시 확인해주세요.');
       return;
+    }
+
+    // Check if user already exists in Firestore
+    let existingMileage = 0;
+    try {
+      const existingDoc = await getUserFromFirestore(`${emailPrefix.trim()}@yonsei.ac.kr`);
+      if (existingDoc && typeof existingDoc.totalMileage === 'number') {
+        existingMileage = existingDoc.totalMileage;
+      }
+    } catch {
+      // ignore
     }
 
     const newUser: StudentUser = {
@@ -68,13 +80,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       studentId: '2026123456',
       dormBuilding: selectedDorm,
       roomNumber: roomNumber || '301호',
-      totalMileage: 2500, // Initial balance so they can experience reward redemption or earn +500P to reach 3,000P!
+      totalMileage: existingMileage,
     };
 
     onAuthSuccess(newUser);
   };
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = async () => {
+    let existingMileage = 0;
+    try {
+      const existingDoc = await getUserFromFirestore('guest@yonsei.ac.kr');
+      if (existingDoc && typeof existingDoc.totalMileage === 'number') {
+        existingMileage = existingDoc.totalMileage;
+      }
+    } catch {
+      // ignore
+    }
+
     const guestUser: StudentUser = {
       email: 'guest@yonsei.ac.kr',
       isVerified: false,
@@ -83,7 +105,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       studentId: 'GUEST',
       dormBuilding: selectedDorm || '송도학사 제1기숙사 A동',
       roomNumber: roomNumber || '301호',
-      totalMileage: 1000,
+      totalMileage: existingMileage,
     };
     onAuthSuccess(guestUser);
   };

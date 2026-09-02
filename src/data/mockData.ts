@@ -1,4 +1,4 @@
-import { EcoReward, SamplePhotoPreset } from '../types';
+import { EcoReward } from '../types';
 
 export interface DormOption {
   id: string;
@@ -37,40 +37,6 @@ export const ITEM_CATEGORIES = [
   '수납/옷걸이/바구니',
   '주방/식기/보온병',
   '도서/학용품/기타',
-];
-
-// Presets that look exactly like dorm checkout items
-export const SAMPLE_PRESETS: SamplePhotoPreset[] = [
-  {
-    id: 'towel-bundle',
-    title: '세탁 완료 수건 & 침구 묶음',
-    category: '침구/수건/생활잡화',
-    url: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=600&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'desk-lamp',
-    title: 'LED 독서등 & 스탠드',
-    category: '소형가전/스탠드/드라이기',
-    url: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'laundry-basket',
-    title: '접이식 빨래바구니 & 옷걸이',
-    category: '수납/옷걸이/바구니',
-    url: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'hairdryer',
-    title: '소형 헤어드라이어',
-    category: '소형가전/스탠드/드라이기',
-    url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'tumbler-mug',
-    title: '연세 텀블러 & 머그컵 세트',
-    category: '주방/식기/보온병',
-    url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80',
-  },
 ];
 
 export const ECO_REWARDS: EcoReward[] = [
