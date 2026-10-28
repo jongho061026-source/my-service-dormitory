@@ -132,15 +132,18 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
     }
   }
 
-  // 2. Try Gmail SMTP with provided credentials and environment variables
-  const smtpUser = process.env.SMTP_USER || "jongho061026@gmail.com";
-  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  // 2. Try Gmail SMTP with host: 'smtp.gmail.com', port: 465, secure: true
+  const rawUser = process.env.SMTP_USER || "jongho061026@gmail.com";
+  const smtpUser = rawUser?.trim();
+  const smtpPass = process.env.SMTP_PASS?.replace(/\s+/g, "");
 
   if (smtpUser && smtpPass) {
     try {
-      console.log(`[Email Transporter Init] Using service: 'gmail', User: ${smtpUser}`);
+      console.log(`[Email Transporter Init] host: smtp.gmail.com, port: 465, secure: true, User: ${smtpUser}, USER설정여부: ${!!process.env.SMTP_USER}`);
       const transporter = nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
         auth: {
           user: smtpUser,
           pass: smtpPass,
@@ -165,16 +168,18 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
         command: err?.command,
         response: err?.response,
         responseCode: err?.responseCode,
-        stack: err?.stack,
       });
-      return { sent: false, error: err?.response || err?.message || "Gmail SMTP 전송 실패" };
+      return {
+        sent: false,
+        error: `[에러원인: ${err?.message || err} / USER설정여부: ${!!process.env.SMTP_USER}]`,
+      };
     }
   }
 
   return {
     sent: false,
     method: "none",
-    error: "이메일 발송 계정(SMTP_USER, SMTP_PASS) 설정이 누락되었습니다.",
+    error: `[에러원인: SMTP_USER 또는 SMTP_PASS 환경변수 미설정 / USER설정여부: ${!!process.env.SMTP_USER} / PASS설정여부: ${!!process.env.SMTP_PASS}]`,
   };
 }
 
@@ -214,11 +219,14 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: `인증 메일 발송 실패: ${deliveryResult.error || "메일 전송 중 문제가 발생했습니다."}`,
+      message: deliveryResult.error || `[에러원인: 메일 발송 실패 / USER설정여부: ${!!process.env.SMTP_USER}]`,
     });
   } catch (error: any) {
     console.error("Error in /api/auth/send-verification-code:", error);
-    return res.status(500).json({ success: false, message: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요." });
+    return res.status(500).json({
+      success: false,
+      message: `[에러원인: ${error?.message || "서버 오류"} / USER설정여부: ${!!process.env.SMTP_USER}]`,
+    });
   }
 });
 

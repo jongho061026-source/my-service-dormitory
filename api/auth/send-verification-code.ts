@@ -88,13 +88,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(500).json({
       success: false,
-      message: `인증 메일 발송 실패: ${result.error || "메일 전송 중 문제가 발생했습니다."}`,
+      message: result.error || `[에러원인: 메일 발송 실패 / USER설정여부: ${!!process.env.SMTP_USER}]`,
     });
   } catch (error: any) {
     console.error("Vercel send-verification-code error:", error);
     return res.status(500).json({
       success: false,
-      message: error?.message || "서버 내부 오류가 발생했습니다.",
+      message: `[에러원인: ${error?.message || "서버 내부 오류"} / USER설정여부: ${!!process.env.SMTP_USER}]`,
     });
   }
 }

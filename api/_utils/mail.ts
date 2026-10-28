@@ -84,15 +84,18 @@ export async function sendVerificationEmail(
     </div>
   `;
 
-  // 1. Gmail SMTP Transporter with optimized service: 'gmail'
-  const smtpUser = process.env.SMTP_USER || "jongho061026@gmail.com";
-  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  // 1. Gmail SMTP Transporter with host: 'smtp.gmail.com', port: 465, secure: true
+  const rawUser = process.env.SMTP_USER || "jongho061026@gmail.com";
+  const smtpUser = rawUser?.trim();
+  const smtpPass = process.env.SMTP_PASS?.replace(/\s+/g, "");
 
   if (smtpUser && smtpPass) {
     try {
-      console.log(`[Email Transporter Init] Using service: 'gmail', User: ${smtpUser}`);
+      console.log(`[Email Transporter Init] host: smtp.gmail.com, port: 465, secure: true, User: ${smtpUser}, USER설정여부: ${!!process.env.SMTP_USER}`);
       const transporter = nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
         auth: {
           user: smtpUser,
           pass: smtpPass,
@@ -117,19 +120,26 @@ export async function sendVerificationEmail(
         command: err?.command,
         response: err?.response,
         responseCode: err?.responseCode,
-        stack: err?.stack,
       });
+
+      const errorDetail = `[에러원인: ${err?.message || err} / USER설정여부: ${!!process.env.SMTP_USER}]`;
 
       // Fall through to Resend if available
       if (!process.env.RESEND_API_KEY) {
         return {
           sent: false,
-          error: err?.response || err?.message || "Gmail SMTP 인증 또는 전송에 실패했습니다.",
+          error: errorDetail,
         };
       }
     }
   } else {
     console.warn("[Email Send Warning] SMTP_USER or SMTP_PASS is missing in environment variables.");
+    if (!process.env.RESEND_API_KEY) {
+      return {
+        sent: false,
+        error: `[에러원인: SMTP_USER 또는 SMTP_PASS 환경변수 미설정 / USER설정여부: ${!!process.env.SMTP_USER} / PASS설정여부: ${!!process.env.SMTP_PASS}]`,
+      };
+    }
   }
 
   // 2. Resend Fallback (if RESEND_API_KEY is configured)
@@ -146,18 +156,24 @@ export async function sendVerificationEmail(
       });
       if (res.error) {
         console.error("[Resend API Error]:", res.error);
-        return { sent: false, error: res.error.message };
+        return {
+          sent: false,
+          error: `[에러원인: ${res.error.message} / USER설정여부: ${!!process.env.SMTP_USER}]`,
+        };
       }
       return { sent: true, method: "Resend" };
     } catch (err: any) {
       console.error("[Resend Delivery Failed]:", err);
-      return { sent: false, error: err.message || "Resend 전송 실패" };
+      return {
+        sent: false,
+        error: `[에러원인: ${err.message || "Resend 전송 실패"} / USER설정여부: ${!!process.env.SMTP_USER}]`,
+      };
     }
   }
 
   return {
     sent: false,
     method: "none",
-    error: "이메일 발송 계정(SMTP_USER, SMTP_PASS) 설정이 누락되었습니다.",
+    error: `[에러원인: 이메일 발송 계정(SMTP_PASS) 설정 누락 / USER설정여부: ${!!process.env.SMTP_USER}]`,
   };
 }

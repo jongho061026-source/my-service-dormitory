@@ -60,12 +60,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         data = JSON.parse(rawText);
       } catch {
         if (!response.ok) {
-          throw new Error(`서버 응답 오류 (${response.status}): 메일 발송 서버를 연결할 수 없습니다.`);
+          throw new Error(`[서버 응답 오류 (${response.status}): ${rawText ? rawText.slice(0, 150) : response.statusText}]`);
         }
       }
 
       if (!response.ok || !data?.success) {
-        throw new Error(data?.message || '인증번호 발송에 실패했습니다. 다시 시도해주세요.');
+        throw new Error(data?.message || `[에러원인: 메일 발송 실패 (HTTP ${response.status})]`);
       }
 
       // Real email dispatch successful
@@ -79,7 +79,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       );
     } catch (err: any) {
       console.error('Email verification error:', err);
-      setErrorMsg(err.message || '인증 메일 발송 중 오류가 발생했습니다.');
+      setErrorMsg(err.message || '[에러원인: 알 수 없는 발송 오류]');
     } finally {
       setIsSending(false);
     }
@@ -355,9 +355,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             </div>
 
             {errorMsg && (
-              <div className="flex items-center gap-1.5 text-xs text-[#DC2626] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200">
-                <AlertCircle className="h-4 w-4 shrink-0 text-[#DC2626]" />
-                <span>{errorMsg}</span>
+              <div className="flex items-start gap-2 text-xs text-[#DC2626] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-[#DC2626]" />
+                <span className="break-words leading-relaxed">{errorMsg}</span>
               </div>
             )}
 
