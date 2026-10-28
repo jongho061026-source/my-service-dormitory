@@ -132,47 +132,49 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
     }
   }
 
-  // 2. Try SMTP with provided credentials and environment variables
-  const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-  const smtpPort = Number(process.env.SMTP_PORT) || 587;
-  const smtpUser = process.env.SMTP_USER || "hoho268349@yonsei.ac.kr";
-  const smtpPass = (process.env.SMTP_PASS || "jzwf kvag uicp junv").replace(/\s+/g, "");
+  // 2. Try Gmail SMTP with provided credentials and environment variables
+  const smtpUser = process.env.SMTP_USER || "jongho061026@gmail.com";
+  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
 
-  if (smtpHost && smtpUser && smtpPass) {
+  if (smtpUser && smtpPass) {
     try {
+      console.log(`[Email Transporter Init] Using service: 'gmail', User: ${smtpUser}`);
       const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
+        service: "gmail",
         auth: {
           user: smtpUser,
           pass: smtpPass,
         },
-        tls: {
-          rejectUnauthorized: false,
-        },
       });
 
-      const fromEmail = process.env.EMAIL_FROM || smtpUser;
-      await transporter.sendMail({
-        from: `"연근 마켓" <${fromEmail}>`,
+      const mailOptions = {
+        from: `"연근마켓" <${smtpUser}>`,
         to: targetEmail,
-        subject: `[연근 마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
+        subject: `[연근마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
         html: htmlContent,
-      });
+      };
 
-      console.log(`[Email Sent via SMTP] To: ${targetEmail}`);
-      return { sent: true, method: "SMTP" };
+      console.log(`[Email Sending via Gmail SMTP] From: "연근마켓" <${smtpUser}> -> To: ${targetEmail}`);
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`[Email Sent via SMTP Success] To: ${targetEmail}, MessageId: ${info.messageId}`);
+      return { sent: true, method: "Gmail-SMTP" };
     } catch (err: any) {
-      console.error("SMTP sending failed:", err);
-      return { sent: false, error: err.message || "SMTP 전송 실패" };
+      console.error("[Email Send Error - Gmail SMTP Details]:", {
+        message: err?.message,
+        code: err?.code,
+        command: err?.command,
+        response: err?.response,
+        responseCode: err?.responseCode,
+        stack: err?.stack,
+      });
+      return { sent: false, error: err?.response || err?.message || "Gmail SMTP 전송 실패" };
     }
   }
 
   return {
     sent: false,
     method: "none",
-    error: "이메일 발송 계정(SMTP) 설정이 누락되었습니다.",
+    error: "이메일 발송 계정(SMTP_USER, SMTP_PASS) 설정이 누락되었습니다.",
   };
 }
 
@@ -206,7 +208,7 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
         verificationToken,
         delivered: true,
         deliveryMethod: deliveryResult.method,
-        message: `${trimmedEmail} 메일함으로 인증번호 4자리를 발송했습니다. 수신함을 확인해주세요.`,
+        message: "인증번호가 연세대 웹메일로 발송되었습니다.",
       });
     }
 

@@ -57,14 +57,14 @@ export async function sendVerificationEmail(
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px 24px; border: 1px solid #E2E8F0; border-radius: 16px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="display: inline-block; background-color: #014B43; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">
-          연세대학교 기숙사 자원순환 연근 마켓
+          연세대학교 기숙사 자원순환 연근마켓
         </div>
       </div>
       <h2 style="color: #1E2923; text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 8px;">
         웹메일 학생 인증번호
       </h2>
       <p style="color: #4A5568; font-size: 14px; text-align: center; line-height: 1.6; margin-bottom: 24px;">
-        연근 마켓 서비스 이용을 위한 연세대학교 학생 인증 번호입니다.<br/>
+        연근마켓 서비스 이용을 위한 연세대학교 학생 인증 번호입니다.<br/>
         아래의 4자리 인증번호를 앱 화면에 입력해 주세요.
       </p>
       <div style="background-color: #F0FDF4; border: 2px dashed #014B43; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
@@ -84,44 +84,52 @@ export async function sendVerificationEmail(
     </div>
   `;
 
-  // 1. SMTP Transporter using User's Environment Variables & Fallbacks
-  const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-  const smtpPort = Number(process.env.SMTP_PORT) || 587;
-  const smtpUser = process.env.SMTP_USER || "hoho268349@yonsei.ac.kr";
-  const smtpPass = (process.env.SMTP_PASS || "jzwf kvag uicp junv").replace(/\s+/g, "");
+  // 1. Gmail SMTP Transporter with optimized service: 'gmail'
+  const smtpUser = process.env.SMTP_USER || "jongho061026@gmail.com";
+  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
 
-  if (smtpHost && smtpUser && smtpPass) {
+  if (smtpUser && smtpPass) {
     try {
+      console.log(`[Email Transporter Init] Using service: 'gmail', User: ${smtpUser}`);
       const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
+        service: "gmail",
         auth: {
           user: smtpUser,
           pass: smtpPass,
         },
-        tls: {
-          rejectUnauthorized: false,
-        },
       });
 
-      const fromEmail = process.env.EMAIL_FROM || smtpUser;
-      await transporter.sendMail({
-        from: `"연근 마켓" <${fromEmail}>`,
+      const mailOptions = {
+        from: `"연근마켓" <${smtpUser}>`,
         to: targetEmail,
-        subject: `[연근 마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
+        subject: `[연근마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
         html: htmlContent,
+      };
+
+      console.log(`[Email Sending] From: "연근마켓" <${smtpUser}> -> To: ${targetEmail}`);
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`[Email Sent Success] MessageId: ${info.messageId}, Accepted: ${JSON.stringify(info.accepted)}`);
+      return { sent: true, method: "Gmail-SMTP" };
+    } catch (err: any) {
+      console.error("[Email Send Error - Gmail SMTP Details]:", {
+        message: err?.message,
+        code: err?.code,
+        command: err?.command,
+        response: err?.response,
+        responseCode: err?.responseCode,
+        stack: err?.stack,
       });
 
-      console.log(`[Email Sent via SMTP] To: ${targetEmail}`);
-      return { sent: true, method: "SMTP" };
-    } catch (err: any) {
-      console.error("SMTP delivery failed:", err);
       // Fall through to Resend if available
       if (!process.env.RESEND_API_KEY) {
-        return { sent: false, error: err.message || "SMTP 전송 실패" };
+        return {
+          sent: false,
+          error: err?.response || err?.message || "Gmail SMTP 인증 또는 전송에 실패했습니다.",
+        };
       }
     }
+  } else {
+    console.warn("[Email Send Warning] SMTP_USER or SMTP_PASS is missing in environment variables.");
   }
 
   // 2. Resend Fallback (if RESEND_API_KEY is configured)
@@ -131,18 +139,18 @@ export async function sendVerificationEmail(
       const resend = new Resend(resendApiKey);
       const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
       const res = await resend.emails.send({
-        from: `연근 마켓 <${fromEmail}>`,
+        from: `연근마켓 <${fromEmail}>`,
         to: targetEmail,
-        subject: `[연근 마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
+        subject: `[연근마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
         html: htmlContent,
       });
       if (res.error) {
-        console.error("Resend API error:", res.error);
+        console.error("[Resend API Error]:", res.error);
         return { sent: false, error: res.error.message };
       }
       return { sent: true, method: "Resend" };
     } catch (err: any) {
-      console.error("Resend delivery failed:", err);
+      console.error("[Resend Delivery Failed]:", err);
       return { sent: false, error: err.message || "Resend 전송 실패" };
     }
   }
@@ -150,6 +158,6 @@ export async function sendVerificationEmail(
   return {
     sent: false,
     method: "none",
-    error: "이메일 발송 계정(SMTP) 설정이 누락되었습니다.",
+    error: "이메일 발송 계정(SMTP_USER, SMTP_PASS) 설정이 누락되었습니다.",
   };
 }

@@ -69,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         delivered: true,
         email: trimmedEmail,
         verificationToken,
-        message: `${trimmedEmail} 메일함으로 인증번호 4자리를 발송했습니다. 수신함을 확인해주세요.`,
+        message: "인증번호가 연세대 웹메일로 발송되었습니다.",
       });
     }
 

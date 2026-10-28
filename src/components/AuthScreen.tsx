@@ -75,7 +75,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       setTimer(180);
       setTimerActive(true);
       setSuccessInfo(
-        data.message || `${fullEmail} 메일함으로 인증번호 4자리를 발송했습니다. 수신함을 확인해주세요.`
+        data.message || '인증번호가 연세대 웹메일로 발송되었습니다.'
       );
     } catch (err: any) {
       console.error('Email verification error:', err);
@@ -278,9 +278,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               <div className="rounded-xl border border-[#A7F3D0] bg-[#ECFDF5] p-3 text-xs flex items-start gap-2 animate-fadeIn text-[#065F46]">
                 <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-[#059669]" />
                 <div className="space-y-0.5">
-                  <p className="font-bold">인증 메일 발송 완료</p>
+                  <p className="font-bold text-xs text-[#065F46] flex items-center gap-1">
+                    인증번호가 연세대 웹메일로 발송되었습니다
+                  </p>
                   <p className="text-[11px] leading-relaxed text-[#047857]">
-                    연세대학교 웹메일 수신함(<span className="font-semibold">{emailPrefix}@yonsei.ac.kr</span>)을 확인하고 도착한 4자리 인증번호를 아래에 입력해 주세요.
+                    웹메일 수신함(<span className="font-semibold text-[#014B43]">{emailPrefix}@yonsei.ac.kr</span>)을 확인하고 수신된 4자리 인증번호를 아래에 입력해 주세요.
                   </p>
                 </div>
               </div>
