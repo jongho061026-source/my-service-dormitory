@@ -32,7 +32,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     let body = req.body;
-    if (typeof body === "string") {
+    if (!body) {
+      try {
+        const chunks: any[] = [];
+        for await (const chunk of req) {
+          chunks.push(chunk);
+        }
+        if (chunks.length > 0) {
+          const raw = Buffer.concat(chunks).toString("utf-8");
+          body = JSON.parse(raw);
+        }
+      } catch {
+        // ignore
+      }
+    } else if (typeof body === "string") {
       try {
         body = JSON.parse(body);
       } catch {
