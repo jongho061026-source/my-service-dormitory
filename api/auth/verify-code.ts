@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { verifyVerificationToken } from "../_utils/mail";
+import crypto from "crypto";
 
 interface VercelRequest extends IncomingMessage {
   body?: any;
@@ -10,6 +10,47 @@ interface VercelResponse extends ServerResponse {
   status: (code: number) => VercelResponse;
   json: (body: any) => VercelResponse;
   send: (body: any) => VercelResponse;
+}
+
+const SECRET_KEY = process.env.AUTH_SECRET || "yonsei-market-verification-secret-key-2026";
+
+function verifyVerificationToken(
+  email: string,
+  code: string,
+  token?: string | null
+): { valid: boolean; error?: string } {
+  if (!token) {
+    return { valid: false, error: "인증 토큰이 없습니다. 인증번호를 다시 요청해주세요." };
+  }
+
+  const parts = token.split(":");
+  if (parts.length !== 4) {
+    return { valid: false, error: "유효하지 않은 인증 토큰 형식입니다." };
+  }
+
+  const [tokenEmail, tokenCode, expiresAtStr, signature] = parts;
+  const expiresAt = Number(expiresAtStr);
+
+  if (tokenEmail.toLowerCase() !== email.toLowerCase().trim()) {
+    return { valid: false, error: "인증 요청한 이메일 주소와 일치하지 않습니다." };
+  }
+
+  if (tokenCode.trim() !== code.trim()) {
+    return { valid: false, error: "인증번호 4자리가 일치하지 않습니다. 수신된 메일을 확인해주세요." };
+  }
+
+  if (Date.now() > expiresAt) {
+    return { valid: false, error: "인증 유효시간(3분)이 만료되었습니다. 인증번호를 다시 받아주세요." };
+  }
+
+  const expectedPayload = `${tokenEmail}:${tokenCode}:${expiresAtStr}`;
+  const expectedSig = crypto.createHmac("sha256", SECRET_KEY).update(expectedPayload).digest("hex");
+
+  if (signature !== expectedSig) {
+    return { valid: false, error: "인증 서명이 변조되었거나 유효하지 않습니다." };
+  }
+
+  return { valid: true };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
