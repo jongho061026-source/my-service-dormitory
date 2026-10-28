@@ -5,10 +5,27 @@ import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import { Resend } from "resend";
 
+import fs from "fs";
+
 dotenv.config();
 
+// Attempt to read secrets from /app/.dev.env.json if present
+try {
+  if (fs.existsSync("/app/.dev.env.json")) {
+    const raw = fs.readFileSync("/app/.dev.env.json", "utf8");
+    const devEnv = JSON.parse(raw);
+    for (const [key, val] of Object.entries(devEnv)) {
+      if (!process.env[key] && typeof val === "string") {
+        process.env[key] = val;
+      }
+    }
+  }
+} catch {
+  // ignore
+}
+
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 

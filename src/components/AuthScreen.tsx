@@ -52,10 +52,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         body: JSON.stringify({ email: fullEmail }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        if (response.status === 404) {
+          throw new Error('배포 환경에서 백엔드 인증 API 서버를 찾을 수 없습니다 (404 Not Found). 정적 호스팅이 아닌 Node.js 풀스택(Express) 환경으로 배포되었는지 확인해주세요.');
+        } else {
+          throw new Error(`서버 통신 오류 (HTTP ${response.status}). 잠시 후 다시 시도해주세요.`);
+        }
+      }
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || '인증번호 발송에 실패했습니다.');
+        throw new Error(data?.message || '인증번호 발송에 실패했습니다.');
       }
 
       setIsCodeRequested(true);
@@ -99,10 +109,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         body: JSON.stringify({ email: fullEmail, code: authCode.trim() }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        if (response.status === 404) {
+          throw new Error('배포 환경에서 백엔드 인증 API 서버를 찾을 수 없습니다 (404 Not Found).');
+        } else {
+          throw new Error(`서버 통신 오류 (HTTP ${response.status}).`);
+        }
+      }
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || '인증번호가 일치하지 않습니다.');
+        throw new Error(data?.message || '인증번호가 일치하지 않습니다.');
       }
 
       // Check if user already exists in Firestore
