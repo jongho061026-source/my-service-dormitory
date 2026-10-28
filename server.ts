@@ -29,6 +29,50 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 
+import crypto from "crypto";
+
+const SECRET_KEY = process.env.AUTH_SECRET || "yonsei-market-verification-secret-key-2026";
+
+function generateVerificationToken(email: string, code: string, expiresAt: number): string {
+  const payload = `${email.toLowerCase().trim()}:${code.trim()}:${expiresAt}`;
+  const signature = crypto.createHmac("sha256", SECRET_KEY).update(payload).digest("hex");
+  return `${payload}:${signature}`;
+}
+
+function verifyVerificationToken(
+  email: string,
+  code: string,
+  token?: string | null
+): { valid: boolean; error?: string } {
+  if (!token) {
+    return { valid: false, error: "인증 토큰이 없습니다." };
+  }
+  const parts = token.split(":");
+  if (parts.length !== 4) {
+    return { valid: false, error: "유효하지 않은 인증 토큰입니다." };
+  }
+  const [tokenEmail, tokenCode, expiresAtStr, signature] = parts;
+  const expiresAt = Number(expiresAtStr);
+
+  if (tokenEmail.toLowerCase() !== email.toLowerCase().trim()) {
+    return { valid: false, error: "이메일 불일치" };
+  }
+  if (tokenCode.trim() !== code.trim()) {
+    return { valid: false, error: "인증번호 4자리가 일치하지 않습니다." };
+  }
+  if (Date.now() > expiresAt) {
+    return { valid: false, error: "인증시간(3분)이 만료되었습니다." };
+  }
+  const expectedSig = crypto
+    .createHmac("sha256", SECRET_KEY)
+    .update(`${tokenEmail}:${tokenCode}:${expiresAtStr}`)
+    .digest("hex");
+  if (signature !== expectedSig) {
+    return { valid: false, error: "인증 서명이 유효하지 않습니다." };
+  }
+  return { valid: true };
+}
+
 // In-memory verification code store: email -> { code, expiresAt }
 const verificationStore = new Map<string, { code: string; expiresAt: number }>();
 
@@ -88,20 +132,42 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
     }
   }
 
-  // 2. Try SMTP if SMTP_HOST or SMTP_USER is available
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  // 2. Try SMTP with flexible variable names
+  const smtpUser =
+    process.env.SMTP_USER ||
+    process.env.EMAIL_USER ||
+    process.env.GMAIL_USER ||
+    process.env.NAVER_USER;
+  const smtpPass =
+    process.env.SMTP_PASS ||
+    process.env.SMTP_PASSWORD ||
+    process.env.EMAIL_PASS ||
+    process.env.EMAIL_PASSWORD ||
+    process.env.GMAIL_PASS ||
+    process.env.NAVER_PASS;
+
+  let smtpHost = process.env.SMTP_HOST || process.env.EMAIL_HOST;
+  if (!smtpHost && smtpUser) {
+    if (smtpUser.includes("@naver.com")) smtpHost = "smtp.naver.com";
+    else if (smtpUser.includes("@gmail.com")) smtpHost = "smtp.gmail.com";
+    else if (smtpUser.includes("@daum.net") || smtpUser.includes("@kakao.com")) smtpHost = "smtp.daum.net";
+  }
+
+  const smtpPort = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT) || 587;
+
+  if (smtpHost && smtpUser && smtpPass) {
     try {
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: Number(process.env.SMTP_PORT) === 465,
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: smtpUser,
+          pass: smtpPass,
         },
       });
 
-      const fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER;
+      const fromEmail = process.env.EMAIL_FROM || smtpUser;
       await transporter.sendMail({
         from: `"연근 마켓" <${fromEmail}>`,
         to: targetEmail,
@@ -118,7 +184,7 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
   }
 
   // 3. If no external email service is configured yet:
-  console.log(`[Notice] No RESEND_API_KEY or SMTP configured. Generated code for ${targetEmail}: ${code}`);
+  console.log(`[Notice] No email service configured. Generated code for ${targetEmail}: ${code}`);
   return {
     sent: false,
     method: "local",
@@ -144,6 +210,7 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
     const expiresAt = Date.now() + 3 * 60 * 1000; // 3 minutes validity
 
     verificationStore.set(trimmedEmail, { code, expiresAt });
+    const verificationToken = generateVerificationToken(trimmedEmail, code, expiresAt);
 
     // Attempt real email delivery
     const deliveryResult = await sendVerificationEmail(trimmedEmail, code);
@@ -151,6 +218,7 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
     return res.json({
       success: true,
       email: trimmedEmail,
+      verificationToken,
       delivered: deliveryResult.sent,
       deliveryMethod: deliveryResult.method,
       message: deliveryResult.sent
@@ -168,12 +236,27 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
 // API: Verify student submitted code
 app.post("/api/auth/verify-code", (req, res) => {
   try {
-    const { email, code } = req.body;
+    const { email, code, verificationToken } = req.body;
     if (!email || !code) {
       return res.status(400).json({ success: false, message: "이메일과 인증번호 4자리를 모두 입력해주세요." });
     }
 
     const trimmedEmail = email.trim().toLowerCase();
+
+    // Check cryptographic token if provided
+    if (verificationToken) {
+      const tokenResult = verifyVerificationToken(trimmedEmail, code.toString(), verificationToken);
+      if (tokenResult.valid) {
+        verificationStore.delete(trimmedEmail);
+        return res.json({
+          success: true,
+          verified: true,
+          email: trimmedEmail,
+          message: "연세대학교 학생 인증이 성공적으로 완료되었습니다.",
+        });
+      }
+    }
+
     const stored = verificationStore.get(trimmedEmail);
 
     if (!stored) {
