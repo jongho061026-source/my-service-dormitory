@@ -132,28 +132,11 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
     }
   }
 
-  // 2. Try SMTP with flexible variable names
-  const smtpUser =
-    process.env.SMTP_USER ||
-    process.env.EMAIL_USER ||
-    process.env.GMAIL_USER ||
-    process.env.NAVER_USER;
-  const smtpPass =
-    process.env.SMTP_PASS ||
-    process.env.SMTP_PASSWORD ||
-    process.env.EMAIL_PASS ||
-    process.env.EMAIL_PASSWORD ||
-    process.env.GMAIL_PASS ||
-    process.env.NAVER_PASS;
-
-  let smtpHost = process.env.SMTP_HOST || process.env.EMAIL_HOST;
-  if (!smtpHost && smtpUser) {
-    if (smtpUser.includes("@naver.com")) smtpHost = "smtp.naver.com";
-    else if (smtpUser.includes("@gmail.com")) smtpHost = "smtp.gmail.com";
-    else if (smtpUser.includes("@daum.net") || smtpUser.includes("@kakao.com")) smtpHost = "smtp.daum.net";
-  }
-
-  const smtpPort = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT) || 587;
+  // 2. Try SMTP with provided credentials and environment variables
+  const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+  const smtpPort = Number(process.env.SMTP_PORT) || 587;
+  const smtpUser = process.env.SMTP_USER || "hoho268349@yonsei.ac.kr";
+  const smtpPass = (process.env.SMTP_PASS || "jzwf kvag uicp junv").replace(/\s+/g, "");
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
@@ -164,6 +147,9 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
         auth: {
           user: smtpUser,
           pass: smtpPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
         },
       });
 
@@ -179,16 +165,14 @@ async function sendVerificationEmail(targetEmail: string, code: string): Promise
       return { sent: true, method: "SMTP" };
     } catch (err: any) {
       console.error("SMTP sending failed:", err);
-      return { sent: false, error: err.message };
+      return { sent: false, error: err.message || "SMTP 전송 실패" };
     }
   }
 
-  // 3. If no external email service is configured yet:
-  console.log(`[Notice] No email service configured. Generated code for ${targetEmail}: ${code}`);
   return {
     sent: false,
-    method: "local",
-    error: "EMAIL_SERVICE_NOT_CONFIGURED",
+    method: "none",
+    error: "이메일 발송 계정(SMTP) 설정이 누락되었습니다.",
   };
 }
 
@@ -215,17 +199,20 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
     // Attempt real email delivery
     const deliveryResult = await sendVerificationEmail(trimmedEmail, code);
 
-    return res.json({
-      success: true,
-      email: trimmedEmail,
-      verificationToken,
-      delivered: deliveryResult.sent,
-      deliveryMethod: deliveryResult.method,
-      message: deliveryResult.sent
-        ? `${trimmedEmail} 수신함으로 인증번호가 전송되었습니다. 메일을 확인해주세요.`
-        : deliveryResult.error === "EMAIL_SERVICE_NOT_CONFIGURED"
-        ? `${trimmedEmail} 주소로 발송 요청이 등록되었습니다. 메일 수신함을 확인해주세요.`
-        : `메일 발송 중 오류가 발생했습니다: ${deliveryResult.error}`,
+    if (deliveryResult.sent) {
+      return res.json({
+        success: true,
+        email: trimmedEmail,
+        verificationToken,
+        delivered: true,
+        deliveryMethod: deliveryResult.method,
+        message: `${trimmedEmail} 메일함으로 인증번호 4자리를 발송했습니다. 수신함을 확인해주세요.`,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: `인증 메일 발송 실패: ${deliveryResult.error || "메일 전송 중 문제가 발생했습니다."}`,
     });
   } catch (error: any) {
     console.error("Error in /api/auth/send-verification-code:", error);

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { verifyVerificationToken } from "../_utils/mail.js";
+import { verifyVerificationToken } from "../_utils/mail";
 
 interface VercelRequest extends IncomingMessage {
   body?: any;
@@ -54,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const trimmedEmail = email.trim().toLowerCase();
     const cleanCode = code.toString().trim();
 
-    // Verify using cryptographic token
+    // Verify using cryptographic HMAC token
     const result = verifyVerificationToken(trimmedEmail, cleanCode, verificationToken);
 
     if (!result.valid) {

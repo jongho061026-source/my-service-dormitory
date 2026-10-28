@@ -54,37 +54,77 @@ export async function sendVerificationEmail(
   code: string
 ): Promise<{ sent: boolean; method?: string; error?: string }> {
   const htmlContent = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 16px; background-color: #ffffff;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px 24px; border: 1px solid #E2E8F0; border-radius: 16px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <div style="display: inline-block; background-color: #014B43; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">
+        <div style="display: inline-block; background-color: #014B43; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">
           연세대학교 기숙사 자원순환 연근 마켓
         </div>
       </div>
-      <h2 style="color: #1E2923; text-align: center; font-size: 20px; margin-bottom: 8px;">
+      <h2 style="color: #1E2923; text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 8px;">
         웹메일 학생 인증번호
       </h2>
       <p style="color: #4A5568; font-size: 14px; text-align: center; line-height: 1.6; margin-bottom: 24px;">
-        연근 마켓 서비스 이용을 위한 본인 인증 번호입니다.<br/>
+        연근 마켓 서비스 이용을 위한 연세대학교 학생 인증 번호입니다.<br/>
         아래의 4자리 인증번호를 앱 화면에 입력해 주세요.
       </p>
-      <div style="background-color: #F0FDF4; border: 2px dashed #014B43; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 12px; color: #014B43; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">인증번호 4자리</span>
-        <span style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #014B43; font-family: monospace;">
+      <div style="background-color: #F0FDF4; border: 2px dashed #014B43; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 12px; color: #014B43; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">인증번호 4자리</span>
+        <span style="font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #014B43; font-family: monospace;">
           ${code}
         </span>
       </div>
-      <p style="color: #718096; font-size: 12px; line-height: 1.5; text-align: center;">
+      <p style="color: #718096; font-size: 12px; line-height: 1.6; text-align: center;">
         * 인증번호는 발송 후 <strong>3분간</strong> 유효합니다.<br/>
-        * 본인이 요청하지 않은 경우 이 메일을 무시해 주세요.
+        * 본인이 인증을 요청하지 않은 경우 이 메일을 안전하게 무시해 주세요.
       </p>
       <hr style="border: none; border-top: 1px solid #E2E8F0; margin: 24px 0 16px 0;" />
       <div style="text-align: center; font-size: 11px; color: #A0AEC0;">
-        연세대학교 송도학사 및 신촌학사 기숙사 에코 마일리지 플랫폼
+        연세대학교 송도학사(국제캠퍼스) 및 신촌학사 기숙사 전용 에코 마일리지 플랫폼
       </div>
     </div>
   `;
 
-  // 1. Check Resend (RESEND_API_KEY)
+  // 1. SMTP Transporter using User's Environment Variables & Fallbacks
+  const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+  const smtpPort = Number(process.env.SMTP_PORT) || 587;
+  const smtpUser = process.env.SMTP_USER || "hoho268349@yonsei.ac.kr";
+  const smtpPass = (process.env.SMTP_PASS || "jzwf kvag uicp junv").replace(/\s+/g, "");
+
+  if (smtpHost && smtpUser && smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+
+      const fromEmail = process.env.EMAIL_FROM || smtpUser;
+      await transporter.sendMail({
+        from: `"연근 마켓" <${fromEmail}>`,
+        to: targetEmail,
+        subject: `[연근 마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
+        html: htmlContent,
+      });
+
+      console.log(`[Email Sent via SMTP] To: ${targetEmail}`);
+      return { sent: true, method: "SMTP" };
+    } catch (err: any) {
+      console.error("SMTP delivery failed:", err);
+      // Fall through to Resend if available
+      if (!process.env.RESEND_API_KEY) {
+        return { sent: false, error: err.message || "SMTP 전송 실패" };
+      }
+    }
+  }
+
+  // 2. Resend Fallback (if RESEND_API_KEY is configured)
   const resendApiKey = process.env.RESEND_API_KEY;
   if (resendApiKey) {
     try {
@@ -107,66 +147,9 @@ export async function sendVerificationEmail(
     }
   }
 
-  // 2. Check SMTP with flexible environment variable names
-  const smtpUser =
-    process.env.SMTP_USER ||
-    process.env.EMAIL_USER ||
-    process.env.GMAIL_USER ||
-    process.env.NAVER_USER;
-  const smtpPass =
-    process.env.SMTP_PASS ||
-    process.env.SMTP_PASSWORD ||
-    process.env.EMAIL_PASS ||
-    process.env.EMAIL_PASSWORD ||
-    process.env.GMAIL_PASS ||
-    process.env.NAVER_PASS;
-
-  let smtpHost =
-    process.env.SMTP_HOST ||
-    process.env.EMAIL_HOST;
-
-  if (!smtpHost && smtpUser) {
-    if (smtpUser.includes("@naver.com")) {
-      smtpHost = "smtp.naver.com";
-    } else if (smtpUser.includes("@gmail.com")) {
-      smtpHost = "smtp.gmail.com";
-    } else if (smtpUser.includes("@daum.net") || smtpUser.includes("@kakao.com")) {
-      smtpHost = "smtp.daum.net";
-    }
-  }
-
-  const smtpPort = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT) || 587;
-
-  if (smtpHost && smtpUser && smtpPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
-
-      const fromEmail = process.env.EMAIL_FROM || smtpUser;
-      await transporter.sendMail({
-        from: `"연근 마켓" <${fromEmail}>`,
-        to: targetEmail,
-        subject: `[연근 마켓] 연세대학교 학생 웹메일 인증번호 [${code}]`,
-        html: htmlContent,
-      });
-
-      return { sent: true, method: "SMTP" };
-    } catch (err: any) {
-      console.error("SMTP delivery failed:", err);
-      return { sent: false, error: err.message || "SMTP 전송 실패" };
-    }
-  }
-
   return {
     sent: false,
     method: "none",
-    error: "EMAIL_CREDENTIALS_MISSING",
+    error: "이메일 발송 계정(SMTP) 설정이 누락되었습니다.",
   };
 }

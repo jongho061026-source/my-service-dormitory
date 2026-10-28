@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { sendVerificationEmail, generateVerificationToken } from "../_utils/mail.js";
+import { sendVerificationEmail, generateVerificationToken } from "../_utils/mail";
 
 interface VercelRequest extends IncomingMessage {
   body?: any;
@@ -60,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Generate secure stateless HMAC token for Vercel Serverless
     const verificationToken = generateVerificationToken(trimmedEmail, code, expiresAt);
 
-    // Send the real email
+    // Send the real email via nodemailer SMTP
     const result = await sendVerificationEmail(trimmedEmail, code);
 
     if (result.sent) {
@@ -73,16 +73,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    if (result.error === "EMAIL_CREDENTIALS_MISSING") {
-      return res.status(500).json({
-        success: false,
-        message: "Vercel 환경 변수에 이메일 발송 정보(SMTP_USER, SMTP_PASS 또는 RESEND_API_KEY)가 설정되지 않았습니다.",
-      });
-    }
-
     return res.status(500).json({
       success: false,
-      message: `메일 발송 중 오류가 발생했습니다: ${result.error}`,
+      message: `인증 메일 발송 실패: ${result.error || "메일 전송 중 문제가 발생했습니다."}`,
     });
   } catch (error: any) {
     console.error("Vercel send-verification-code error:", error);
