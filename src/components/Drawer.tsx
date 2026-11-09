@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, Leaf, ReceiptText, User, MapPin, HelpCircle, ShieldCheck, ChevronRight, Sparkles, LogIn, LogOut } from 'lucide-react';
+import { X, Home, ReceiptText, User, MapPin, ShieldCheck, LogIn, LogOut, Gift } from 'lucide-react';
 import { ScreenType, StudentUser } from '../types';
 
 interface DrawerProps {
@@ -46,7 +46,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           <div className="bg-[#014B43] p-5 text-white">
             <div className="flex items-center justify-between">
               <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold text-[#A7F3D0]">
-                연세대학교 에코 MVP
+                연세대학교 기숙사
               </span>
               <button
                 type="button"
@@ -59,7 +59,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             <div className="mt-4 space-y-1">
               <h3 className="text-xl font-black tracking-tight">연근 마켓</h3>
               <p className="text-xs text-white/80">
-                연세대 기숙사 물품 인계 & 에코 마일리지
+                연세대학교 기숙사 물품 인계 마켓
               </p>
             </div>
 
@@ -124,8 +124,8 @@ export const Drawer: React.FC<DrawerProps> = ({
                   : 'text-[#374151] hover:bg-[#F4F7F5]'
               }`}
             >
-              <Leaf className="h-5 w-5" />
-              <span>에코 마일리지 & 리워드</span>
+              <Gift className="h-5 w-5" />
+              <span>마일리지 (리워드 교환)</span>
             </button>
 
             <button
@@ -138,7 +138,7 @@ export const Drawer: React.FC<DrawerProps> = ({
               }`}
             >
               <ReceiptText className="h-5 w-5" />
-              <span>나의 인계 및 교환 내역</span>
+              <span>나의 물품 인계 내역</span>
             </button>
 
             <button
@@ -151,7 +151,7 @@ export const Drawer: React.FC<DrawerProps> = ({
               }`}
             >
               <User className="h-5 w-5" />
-              <span>학우 정보 & 에코 통계</span>
+              <span>학우 정보 & 기숙사</span>
             </button>
           </div>
 
@@ -159,10 +159,10 @@ export const Drawer: React.FC<DrawerProps> = ({
           <div className="mx-4 mt-2 rounded-2xl bg-[#F9FBFA] border border-[#E5E9E7] p-3.5 space-y-2 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-[#014B43]">
               <MapPin className="h-4 w-4" />
-              <span>연근 수거함 위치</span>
+              <span>기숙사 물품 인계 안내</span>
             </div>
             <p className="text-[11px] text-[#4B5563] leading-relaxed">
-              송도학사 제1기숙사(A~C동) 및 제2기숙사(D~G동) 각 동 1층 무인 택배함 옆 연근 수거함에 안전하게 두시면 됩니다.
+              송도학사 기숙사 로비 및 공지된 현장 거점에서 안전하게 물품을 인계하실 수 있습니다.
             </p>
           </div>
         </div>
@@ -180,8 +180,8 @@ export const Drawer: React.FC<DrawerProps> = ({
             </button>
           )}
           <div className="space-y-0.5">
-            <p className="font-semibold text-[#6B7280]">연세대학교 1학년 기숙사 에코 캠페인</p>
-            <p>© 2026 연근 마켓 MVP Project</p>
+            <p className="font-semibold text-[#6B7280]">연세대학교 송도학사 기숙사 물품 인계</p>
+            <p>© 2026 연근 마켓</p>
           </div>
         </div>
       </div>

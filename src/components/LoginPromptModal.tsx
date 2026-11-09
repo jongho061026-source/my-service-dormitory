@@ -57,7 +57,7 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
             </li>
             <li className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#014B43]" />
-              인계 시 1건당 <strong className="text-[#014B43]">500P 마일리지</strong> 즉시 적립
+              인계 시 1건당 <strong className="text-[#014B43]">최대 500P 마일리지</strong> 즉시 적립
             </li>
             <li className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#014B43]" />

@@ -35,8 +35,8 @@ export interface EcoReward {
   category: string;
   pointsRequired: number;
   image: string;
-  description: string;
   badge: string;
+  description: string;
   details: string[];
 }
 

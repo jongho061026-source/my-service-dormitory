@@ -85,7 +85,7 @@ export const RedemptionModal: React.FC<RedemptionModalProps> = ({
               <img
                 src={reward.image}
                 alt={reward.name}
-                className="h-16 w-16 rounded-xl object-cover"
+                className="h-16 w-16 rounded-xl object-contain bg-white border border-[#E5E9E7] p-1"
               />
               <div className="space-y-1">
                 <span className="text-[11px] font-semibold text-[#014B43] bg-[#E7F0EC] px-2 py-0.5 rounded-md">

@@ -32,42 +32,102 @@ export const SONGDO_DORM_GROUPS = [
 export const YONSEI_DORMS: DormOption[] = SONGDO_DORM_GROUPS.flatMap((g) => g.buildings);
 
 export const ITEM_CATEGORIES = [
-  '침구/수건/생활잡화',
-  '소형가전/스탠드/드라이기',
-  '수납/옷걸이/바구니',
-  '주방/식기/보온병',
-  '도서/학용품/기타',
-];
+  '전자기기',
+  '책/서적',
+  '생활용품',
+  '욕실용품',
+  '문구류',
+  '주방용품',
+  '음식(미개봉)',
+  '기타',
+] as const;
+
+export const CATEGORY_MILEAGE_MAP: Record<string, number> = {
+  '전자기기': 500,
+  '책/서적': 300,
+  '생활용품': 250,
+  '욕실용품': 200,
+  '문구류': 150,
+  '주방용품': 100,
+  '음식(미개봉)': 50,
+  '기타': 50,
+};
+
+export const getMileageByCategory = (category: string): number => {
+  return CATEGORY_MILEAGE_MAP[category] ?? 50;
+};
+
+export const MAX_SEMESTER_MILEAGE = 3000;
 
 export const ECO_REWARDS: EcoReward[] = [
   {
-    id: 'eco-sticker',
-    name: '친환경 스티커',
-    category: '문구/스티커 팩',
-    pointsRequired: 1000,
-    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500&auto=format&fit=crop&q=80',
-    badge: '1,000 P',
-    description: '방수 코팅 친환경 콩기름 잉크 스티커 팩 (지구 & 독수리 캐릭터 4종 세트)',
+    id: 'keyring-standing',
+    name: '서있는 연근이 키링',
+    category: '마스코트 키링',
+    pointsRequired: 3000,
+    image: '/assets/rewards/yeongeun_standing.png',
+    badge: '3,000 P',
+    description: '연근 마켓 대표 마스코트, 늠름하게 서 있는 연근이 아크릴 키링',
     details: [
-      '무염소 표백 친환경 재생지 사용',
-      '콩기름(Soy Ink) 인쇄로 화학물질 배출 최소화',
-      '노트북, 텀블러 등에 부착 가능한 생활 방수 코팅',
-      '연세대학교 친환경 에코 캠페인 한정판 디자인',
+      '연근 마켓 캐릭터 연근이 아크릴 키링',
+      '3,000 마일리지 포인트로 교환 가능',
+      '신청 완료 후 송도학사 행정실 또는 지정 거점에서 수령',
     ],
   },
   {
-    id: 'eco-keyring',
-    name: '친환경 키링',
-    category: '업사이클링 굿즈',
-    pointsRequired: 2000,
-    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500&auto=format&fit=crop&q=80',
-    badge: '2,000 P',
-    description: '교내 수거 폐플라스틱 100% 업사이클링 에코 카라비너 키링',
+    id: 'keyring-v',
+    name: '브이하는 연근이 키링',
+    category: '마스코트 키링',
+    pointsRequired: 4000,
+    image: '/assets/rewards/yeongeun_v.png',
+    badge: '4,000 P',
+    description: '승리의 브이 포즈를 취하고 있는 한정판 연근이 키링',
     details: [
-      '연세대 송도학사에서 분리수거된 플라스틱 병뚜껑 재가공',
-      '튼튼한 황동 카라비너 고리 및 에코 각인',
-      '고유의 마블링 패턴으로 세상에 단 하나뿐인 디자인',
-      '에코 마일리지 후원 인증 QR 코드 포함',
+      '연근 마켓 캐릭터 연근이 아크릴 키링',
+      '4,000 마일리지 포인트로 교환 가능',
+      '신청 완료 후 송도학사 행정실 또는 지정 거점에서 수령',
+    ],
+  },
+  {
+    id: 'keyring-thumbsup',
+    name: '따봉하는 연근이 키링',
+    category: '마스코트 키링',
+    pointsRequired: 3500,
+    image: '/assets/rewards/yeongeun_thumbsup.png',
+    badge: '3,500 P',
+    description: '엄지를 척! 학우들을 격려하고 응원하는 따봉 연근이 키링',
+    details: [
+      '연근 마켓 캐릭터 연근이 아크릴 키링',
+      '3,500 마일리지 포인트로 교환 가능',
+      '신청 완료 후 송도학사 행정실 또는 지정 거점에서 수령',
+    ],
+  },
+  {
+    id: 'keycap-confused',
+    name: '당황하는 연근이 키캡',
+    category: '기계식 키보드 키캡',
+    pointsRequired: 1500,
+    image: '/assets/rewards/yeongeun_confused.png',
+    badge: '1,500 P',
+    description: '귀여운 땀방울이 돋보이는 당황하는 표정의 연근이 3D 키캡',
+    details: [
+      '체리 MX 호환 기계식 키보드 포인트 키캡',
+      '1,500 마일리지 포인트로 교환 가능',
+      '신청 완료 후 송도학사 행정실 또는 지정 거점에서 수령',
+    ],
+  },
+  {
+    id: 'keycap-bow',
+    name: '인사하는 연근이 키캡',
+    category: '기계식 키보드 키캡',
+    pointsRequired: 1500,
+    image: '/assets/rewards/yeongeun_bow.png',
+    badge: '1,500 P',
+    description: '공손하게 양손을 모으고 인사하는 사랑스러운 연근이 3D 키캡',
+    details: [
+      '체리 MX 호환 기계식 키보드 포인트 키캡',
+      '1,500 마일리지 포인트로 교환 가능',
+      '신청 완료 후 송도학사 행정실 또는 지정 거점에서 수령',
     ],
   },
 ];
@@ -75,5 +135,5 @@ export const ECO_REWARDS: EcoReward[] = [
 export const PICKUP_LOCATIONS = [
   { id: 'songdo-office', name: '송도학사 종합행정실 (제1기숙사 A동 1층)', hours: '평일 09:00 ~ 18:00' },
   { id: 'songdo-lounge', name: '송도학사 제2기숙사 D동 커뮤니티 라운지', hours: '평일 09:00 ~ 18:00' },
-  { id: 'dorm-pickup-box', name: '송도학사 각 동 1층 무인 연근 수거함', hours: '24시간 상시 운영' },
+  { id: 'songdo-dorm-meeting', name: '송도학사 기숙사 1층 지정 현장 거점', hours: '공지된 인계 시간 운영' },
 ];

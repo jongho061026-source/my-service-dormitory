@@ -67,7 +67,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                     아직 등록된 물품이 없습니다.
                   </p>
                   <p className="text-xs text-[#6B7280]">
-                    기숙사 퇴소 시 생활용품을 등록하고 500P를 적립받아보세요!
+                    기숙사 퇴소 시 생활용품을 등록하고 에코 마일리지를 적립받아보세요!
                   </p>
                 </div>
                 <button
@@ -98,9 +98,16 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                         </div>
                       )}
                       <div className="space-y-1">
-                        <span className="inline-block rounded-md bg-[#F4F7F5] px-2 py-0.5 text-[10px] font-semibold text-[#014B43]">
-                          {item.dormBuilding} {item.roomNumber}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {item.category && (
+                            <span className="inline-block rounded-md bg-[#014B43]/10 px-2 py-0.5 text-[10px] font-bold text-[#014B43]">
+                              {item.category}
+                            </span>
+                          )}
+                          <span className="inline-block rounded-md bg-[#F4F7F5] px-2 py-0.5 text-[10px] font-semibold text-[#4B5563]">
+                            {item.dormBuilding} {item.roomNumber}
+                          </span>
+                        </div>
                         <h4 className="text-sm font-bold text-[#1E2923] line-clamp-1">
                           {item.description || '기숙사 인계 물품'}
                         </h4>
@@ -121,7 +128,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                   <div className="flex items-center justify-between border-t border-[#F0F3F1] pt-2.5 text-xs">
                     <span className="flex items-center gap-1 text-[11px] text-[#059669] font-medium">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      1층 연근 수거함 인계 완료
+                      기숙사 현장 인계 완료
                     </span>
                     <span className="text-[10px] text-[#9CA3AF]">
                       사진 {item.photos.length}장 첨부됨

@@ -36,39 +36,71 @@ export const MileageInfoModal: React.FC<MileageInfoModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-5 space-y-4">
-          <div className="rounded-2xl bg-[#F9DDCE]/60 p-4 text-center space-y-1.5">
-            <span className="text-xs font-bold text-[#6D4A20]">물품 1개 등록 시</span>
-            <div className="text-3xl font-black text-[#014B43]">
-              +500 P 적립
+          <div className="rounded-2xl bg-[#F9DDCE]/60 p-4 space-y-2.5">
+            <div className="text-center">
+              <span className="text-xs font-bold text-[#6D4A20]">카테고리별 마일리지 적립</span>
+              <div className="text-2xl font-black text-[#014B43] mt-0.5">
+                최대 500 P 적립
+              </div>
             </div>
-            <p className="text-xs text-[#6D4A20]/90">
-              퇴소 시 버려지는 생활용품을 인계 등록하면 마일리지가 즉시 적립됩니다.
-            </p>
+            <div className="grid grid-cols-2 gap-1.5 pt-1 text-xs">
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">전자기기</span>
+                <span className="font-bold text-[#014B43]">+500P</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">책/서적</span>
+                <span className="font-bold text-[#014B43]">+300P</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">생활용품</span>
+                <span className="font-bold text-[#014B43]">+250P</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">욕실용품</span>
+                <span className="font-bold text-[#014B43]">+200P</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">문구류</span>
+                <span className="font-bold text-[#014B43]">+150P</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">주방용품</span>
+                <span className="font-bold text-[#014B43]">+100P</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">음식(미개봉)</span>
+                <span className="font-bold text-[#014B43]">+50P</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5 border border-[#F6D5C3]">
+                <span className="font-semibold text-[#1E2923]">기타</span>
+                <span className="font-bold text-[#014B43]">+50P</span>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2.5 text-xs text-[#4B5563]">
             <h4 className="font-bold text-[#1E2923] flex items-center gap-1.5">
               <Sparkles className="h-4 w-4 text-[#014B43]" />
-              에코 마일리지 활용 방법
+              에코 마일리지 리워드 교환 안내 (총 5종)
             </h4>
-            <div className="space-y-2 pl-1">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-[#014B43] flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-[#1E2923]">1,000P:</strong> 친환경 콩기름 잉크 스티커 팩 (4종 세트)
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-[#014B43] flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-[#1E2923]">2,000P:</strong> 폐플라스틱 100% 업사이클링 에코 키링
-                </div>
+            <div className="rounded-xl border border-[#F6D5C3] bg-[#FDF5F0] p-3 flex items-center gap-3">
+              <img
+                src="/assets/rewards/yeongeun_standing.png"
+                alt="연근이 키링 & 키캡"
+                className="h-12 w-12 rounded-full border border-white bg-white object-contain flex-shrink-0"
+              />
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-[#014B43]">1,500P ~ 4,000P 교환</span>
+                <p className="text-xs font-semibold text-[#1E2923]">연근이 키링 3종 & 키캡 2종</p>
+                <p className="text-[10px] text-[#6D4A20]">마일리지를 모아 귀여운 연근이 굿즈로 바꿔가세요!</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#F4F7F5] p-3 text-[11px] text-[#6B7280] leading-relaxed">
-            • 적립된 마일리지는 연세대학교 기숙사 에코 리워드 수령처(송도학사 행정실 등)에서 바로 교환 가능합니다.
+          <div className="rounded-xl bg-[#F4F7F5] p-3 text-[11px] text-[#6B7280] leading-relaxed space-y-1">
+            <p>• <strong>한 학기 최대 3,000P</strong>까지 적립 가능합니다. (물품 등록을 계속하더라도 마일리지는 최대 3,000P까지만 보유됩니다)</p>
+            <p>• 적립된 마일리지는 연세대학교 송도학사 행정실 또는 공지된 현장 거점에서 바로 교환 수령 가능합니다.</p>
           </div>
 
           <button

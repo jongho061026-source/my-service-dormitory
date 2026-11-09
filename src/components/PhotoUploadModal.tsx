@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { X, Camera, Lightbulb, Plus, Image as ImageIcon } from 'lucide-react';
+import { X, Camera, Lightbulb, Plus, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { CameraCaptureModal } from './CameraCaptureModal';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface PhotoUploadModalProps {
   isOpen: boolean;
@@ -21,27 +22,32 @@ export const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   if (!isOpen) return null;
 
   const totalSlots = 5;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const availableSpace = totalSlots - photos.length;
       const fileList = Array.from(files) as File[];
       const filesToProcess = fileList.slice(0, availableSpace);
-      
-      filesToProcess.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            onAddPhoto(event.target.result as string);
+
+      setIsCompressing(true);
+      try {
+        for (const file of filesToProcess) {
+          const compressed = await compressImageFile(file, 1080, 1080, 0.82);
+          if (compressed) {
+            onAddPhoto(compressed);
           }
-        };
-        reader.readAsDataURL(file);
-      });
+        }
+      } catch (err) {
+        console.error('Error compressing gallery image:', err);
+      } finally {
+        setIsCompressing(false);
+      }
     }
     // Reset file input value so selecting the same file again triggers onChange
     if (e.target) {
@@ -135,6 +141,14 @@ export const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
                 </div>
               </button>
             </div>
+
+            {/* Visual Compression Feedback */}
+            {isCompressing && (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-[#A7F3D0] bg-[#F0FDF4] p-3 text-xs font-bold text-[#014B43] shadow-xs">
+                <Loader2 className="h-4 w-4 animate-spin text-[#014B43]" />
+                <span>갤러리 사진 최적화 및 등록 중...</span>
+              </div>
+            )}
 
             {/* 5 Photo Slots Grid */}
             <div className="space-y-1.5">

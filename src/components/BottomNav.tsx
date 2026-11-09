@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ReceiptText, Leaf, User } from 'lucide-react';
+import { Home, ReceiptText, User, Gift } from 'lucide-react';
 import { ScreenType } from '../types';
 
 interface BottomNavProps {
@@ -14,13 +14,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   const navItems: { id: ScreenType; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'register', label: '홈', icon: Home },
+    { id: 'mileage', label: '마일리지', icon: Gift },
     { id: 'history', label: '내역', icon: ReceiptText },
-    { id: 'mileage', label: '마일리지', icon: Leaf },
     { id: 'profile', label: '프로필', icon: User },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 mx-auto max-w-md border-t border-[#E5E9E7] bg-white px-2 py-1.5 shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 mx-auto max-w-md border-t border-[#E5E9E7] bg-white px-4 py-1.5 shadow-lg">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive =
@@ -42,7 +42,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             >
               <div
                 className={`flex h-8 w-12 items-center justify-center rounded-full transition-all ${
-                  isActive ? 'bg-[#F9DDCE]/70 text-[#014B43]' : ''
+                  isActive ? 'bg-[#E7F0EC] text-[#014B43]' : ''
                 }`}
               >
                 <Icon

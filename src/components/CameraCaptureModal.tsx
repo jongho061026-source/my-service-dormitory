@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, X, RefreshCw, Check, AlertCircle, Sparkles, SwitchCamera, Image as ImageIcon } from 'lucide-react';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface CameraCaptureModalProps {
   isOpen: boolean;
@@ -137,22 +138,23 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   };
 
   // Native mobile camera input fallback handler
-  const handleNativeCameraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNativeCameraChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          onCapturePhoto(event.target.result as string);
+      try {
+        const compressed = await compressImageFile(file, 1080, 1080, 0.85);
+        if (compressed) {
+          onCapturePhoto(compressed);
           if (currentPhotoCount + 1 >= maxPhotoCount) {
             onClose();
           } else {
             setCapturedImage(null);
           }
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Failed to compress native camera image:', err);
+      }
     }
     if (e.target) {
       e.target.value = '';

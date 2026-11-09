@@ -38,18 +38,30 @@ export default function App() {
 
   // Sync to local storage & Firestore
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('yonsei_eco_user', JSON.stringify(user));
-      syncUserToFirestore(user);
+    try {
+      if (user) {
+        localStorage.setItem('yonsei_eco_user', JSON.stringify(user));
+        syncUserToFirestore(user);
+      }
+    } catch (err) {
+      console.warn('LocalStorage save failed (user):', err);
     }
   }, [user]);
 
   useEffect(() => {
-    localStorage.setItem('yonsei_eco_registrations', JSON.stringify(registrations));
+    try {
+      localStorage.setItem('yonsei_eco_registrations', JSON.stringify(registrations));
+    } catch (err) {
+      console.warn('LocalStorage save failed (registrations):', err);
+    }
   }, [registrations]);
 
   useEffect(() => {
-    localStorage.setItem('yonsei_eco_redemptions', JSON.stringify(redemptions));
+    try {
+      localStorage.setItem('yonsei_eco_redemptions', JSON.stringify(redemptions));
+    } catch (err) {
+      console.warn('LocalStorage save failed (redemptions):', err);
+    }
   }, [redemptions]);
 
   // Subscribe to real-time Firestore updates for redemptions and registrations when logged in
@@ -74,9 +86,14 @@ export default function App() {
   // (Total Earned from Registrations) - (Total Spent on Redemptions)
   useEffect(() => {
     if (!user) return;
-    const earned = registrations.reduce((sum, r) => sum + (r.mileageEarned || 500), 0);
+    const earned = registrations.reduce(
+      (sum, r) => sum + (typeof r.mileageEarned === 'number' ? r.mileageEarned : 500),
+      0
+    );
     const spent = redemptions.reduce((sum, r) => sum + (r.pointsSpent || 0), 0);
-    const calculatedBalance = Math.max(0, earned - spent);
+    // Hard cap total semester mileage at 3,000
+    const cappedEarned = Math.min(3000, earned);
+    const calculatedBalance = Math.min(3000, Math.max(0, cappedEarned - spent));
 
     if (user.totalMileage !== calculatedBalance) {
       setUser((prev) => (prev ? { ...prev, totalMileage: calculatedBalance } : null));
@@ -113,15 +130,22 @@ export default function App() {
 
     // Save to Firestore Database
     if (user) {
+      const addedPoints = typeof created.mileageEarned === 'number' ? created.mileageEarned : 500;
+      const newTotalMileage = Math.min(3000, user.totalMileage + addedPoints);
+
       const updatedUser: StudentUser = {
         ...user,
-        totalMileage: user.totalMileage + created.mileageEarned,
+        totalMileage: newTotalMileage,
         dormBuilding: created.dormBuilding,
         roomNumber: created.roomNumber,
       };
       setUser(updatedUser);
-      await saveRegistrationToFirestore(created, user.email);
-      await syncUserToFirestore(updatedUser);
+      try {
+        await saveRegistrationToFirestore(created, user.email);
+        await syncUserToFirestore(updatedUser);
+      } catch (err) {
+        console.warn('Firestore sync failed in registration:', err);
+      }
     }
 
     setCurrentScreen('completion');

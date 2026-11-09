@@ -45,15 +45,15 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
           </h2>
         </div>
 
-        {/* Card 1: 에코 마일리지 적립 matching Image 5/6 */}
+        {/* Card 1: 에코 마일리지 적립 */}
         <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 text-center shadow-xs space-y-2">
           <p className="text-xs font-semibold text-[#6B7280]">
-            에코 마일리지 적립
+            {latestRegistration?.category ? `[${latestRegistration.category}] 에코 마일리지 적립` : '에코 마일리지 적립'}
           </p>
           <div className="flex items-center justify-center gap-2 py-1">
             <Leaf className="h-7 w-7 fill-[#6D4A20] text-[#6D4A20]" />
             <span className="text-3xl font-black tracking-tight text-[#6D4A20]">
-              +500P
+              +{latestRegistration?.mileageEarned ?? 500}P
             </span>
           </div>
           <p className="text-xs font-medium text-[#4B5563]">
@@ -67,7 +67,7 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
           </div>
         </div>
 
-        {/* Card 2: 기숙사 지정 반납 장소 matching Image 5/6 */}
+        {/* Card 2: 기숙사 인계 안내 */}
         <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 shadow-xs space-y-2.5">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#EBF2EE] text-[#014B43]">
@@ -75,10 +75,10 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
             </div>
             <div className="space-y-1">
               <h3 className="text-sm font-bold text-[#1E2923]">
-                기숙사 지정 반납 장소
+                기숙사 인계 안내
               </h3>
               <p className="text-xs text-[#4B5563] leading-relaxed">
-                각 동 1층 무인 택배함 옆 <span className="font-bold text-[#014B43]">'연근 수거함'</span>에 물품을 안전하게 넣어주세요.
+                공지된 기숙사 현장 거점 및 1층 로비에서 안전하게 물품을 인계해주세요.
               </p>
             </div>
           </div>

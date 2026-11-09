@@ -205,7 +205,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           </h2>
           <p className="text-sm font-medium text-[#4B5563] leading-relaxed px-2">
             버리지 말고 인계하세요!<br />
-            사진 등록하고 <span className="font-bold text-[#014B43]">에코 마일리지 & 친환경 굿즈</span> 받기
+            퇴소 전 사용 가능한 기숙사 생활용품 간편 등록
           </p>
         </div>
 
@@ -406,10 +406,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         <div className="rounded-xl bg-[#F9DDCE]/60 p-3.5 text-xs text-[#6D4A20] space-y-1">
           <p className="font-bold flex items-center gap-1">
             <Sparkles className="h-3.5 w-3.5" />
-            기숙사 퇴소생을 위한 간편 비대면 인계
+            기숙사 퇴소생을 위한 간편 물품 인계
           </p>
           <p className="text-[11px] text-[#6D4A20]/90 leading-relaxed">
-            별도의 직거래 약속 없이 1층 지정 수거함에 두면 끝! 등록 즉시 500 마일리지가 적립되어 친환경 굿즈로 교환할 수 있습니다.
+            기숙사 로비 및 공지된 현장 거점에서 안전하게 물품을 인계하고 필요한 학우들과 나눌 수 있습니다.
           </p>
         </div>
       </div>

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Camera, ChevronRight, Gift, ChevronDown, Plus, Sparkles, Check, Info, Lock, ShieldAlert, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Camera, ChevronRight, Gift, ChevronDown, Plus, Sparkles, Check, Info, Lock, ShieldAlert, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { ItemRegistration, StudentUser } from '../types';
-import { SONGDO_DORM_GROUPS, YONSEI_DORMS } from '../data/mockData';
+import { SONGDO_DORM_GROUPS, YONSEI_DORMS, ITEM_CATEGORIES, getMileageByCategory } from '../data/mockData';
 import { PhotoUploadModal } from './PhotoUploadModal';
 import { CameraCaptureModal } from './CameraCaptureModal';
 import { LoginPromptModal } from './LoginPromptModal';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface RegisterItemScreenProps {
   user: StudentUser;
@@ -23,15 +24,44 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isDirectCameraOpen, setIsDirectCameraOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('전자기기');
   const [selectedDorm, setSelectedDorm] = useState(user.dormBuilding || '송도학사 제1기숙사 A동');
   const [roomNumber, setRoomNumber] = useState('');
   const [description, setDescription] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingGallery, setIsProcessingGallery] = useState(false);
 
   const handleAddPhoto = (url: string) => {
-    if (photos.length < 5) {
+    if (photos.length < 5 && url) {
       setPhotos((prev) => [...prev, url]);
+    }
+  };
+
+  const handleDirectGalleryChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const availableSpace = 5 - photos.length;
+      const fileList = Array.from(files) as File[];
+      const filesToProcess = fileList.slice(0, availableSpace);
+
+      setIsProcessingGallery(true);
+      try {
+        for (const file of filesToProcess) {
+          const compressed = await compressImageFile(file, 1080, 1080, 0.82);
+          if (compressed) {
+            handleAddPhoto(compressed);
+          }
+        }
+      } catch (err) {
+        console.error('Direct gallery upload error:', err);
+      } finally {
+        setIsProcessingGallery(false);
+      }
+    }
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
@@ -65,24 +95,32 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
     setErrorMsg('');
     setIsSubmitting(true);
 
+    const baseMileage = getMileageByCategory(selectedCategory);
+    const remainingLimit = Math.max(0, 3000 - user.totalMileage);
+    const actualPointsToEarn = Math.min(baseMileage, remainingLimit);
+
     setTimeout(() => {
       onSubmitRegistration({
         dormBuilding: selectedDorm,
         roomNumber: roomNumber.trim(),
-        description: description.trim() || '생활용품 인계 물품',
-        category: '기숙사 생활용품',
+        description: description.trim() || `${selectedCategory} 인계 물품`,
+        category: selectedCategory,
         photos,
-        mileageEarned: 500,
+        mileageEarned: actualPointsToEarn,
         status: 'PENDING_DROPOFF',
       });
       setIsSubmitting(false);
     }, 400);
   };
 
+  const baseCategoryMileage = getMileageByCategory(selectedCategory);
+  const remainingMileageCapacity = Math.max(0, 3000 - user.totalMileage);
+  const willEarn = Math.min(baseCategoryMileage, remainingMileageCapacity);
+
   return (
     <div className="min-h-[calc(100vh-7rem)] bg-[#F4F7F5] pb-24 pt-3 px-4">
       <div className="mx-auto max-w-md space-y-4">
-        {/* Top Peach Banner matching Image 2 */}
+        {/* Top Peach Banner */}
         <div
           id="banner-mileage-notice"
           onClick={onOpenMileageInfo}
@@ -95,12 +133,34 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
               <Gift className="h-6 w-6 stroke-[2]" />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
-                물품 등록 시 500P 적립 예정
-              </h2>
-              <p className="text-xs font-medium text-[#6D4A20]">
-                자원 순환에 동참해주셔서 감사합니다.
-              </p>
+              {user.totalMileage >= 3000 ? (
+                <>
+                  <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
+                    학기 최대 마일리지(3,000P) 달성 완료
+                  </h2>
+                  <p className="text-xs font-medium text-[#6D4A20]">
+                    최대 한도에 도달했습니다. (물품 등록은 정상 진행)
+                  </p>
+                </>
+              ) : remainingMileageCapacity < baseCategoryMileage ? (
+                <>
+                  <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
+                    {selectedCategory} 등록 시 +{willEarn}P 적립 (3,000P 한도)
+                  </h2>
+                  <p className="text-xs font-medium text-[#6D4A20]">
+                    학기 최대 한도까지 {willEarn}P 남았습니다.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
+                    {selectedCategory} 등록 시 +{willEarn}P 적립
+                  </h2>
+                  <p className="text-xs font-medium text-[#6D4A20]">
+                    보유: {user.totalMileage.toLocaleString()}P / 학기 최대 3,000P
+                  </p>
+                </>
+              )}
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-[#6D4A20]/80 stroke-[2.5]" />
@@ -142,13 +202,35 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
             <button
               id="btn-main-photo-manage"
               type="button"
-              onClick={() => setIsPhotoModalOpen(true)}
+              onClick={() => {
+                if (photos.length < 5) {
+                  galleryInputRef.current?.click();
+                } else {
+                  setIsPhotoModalOpen(true);
+                }
+              }}
               className="flex items-center justify-center gap-1.5 rounded-xl border border-[#D0D9D4] bg-[#F9FBFA] py-2.5 px-3 text-xs font-bold text-[#014B43] hover:bg-[#EBF2EE] active:scale-98 transition-all"
             >
               <ImageIcon className="h-4 w-4" />
-              <span>사진 관리 및 선택</span>
+              <span>갤러리에서 선택</span>
             </button>
           </div>
+
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleDirectGalleryChange}
+          />
+
+          {isProcessingGallery && (
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-[#A7F3D0] bg-[#F0FDF4] p-2.5 text-xs font-bold text-[#014B43]">
+              <Loader2 className="h-4 w-4 animate-spin text-[#014B43]" />
+              <span>갤러리 사진 최적화 및 등록 중...</span>
+            </div>
+          )}
 
           {/* Photo Preview Slots */}
           <div className="flex items-center gap-3 overflow-x-auto py-1 no-scrollbar">
@@ -162,6 +244,24 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
               <Camera className="h-6 w-6 stroke-[2.2]" />
               <span className="mt-1 text-xs font-bold">직접 촬영</span>
               <span className="text-[10px] text-[#014B43]/80">{photos.length}/5장</span>
+            </button>
+
+            {/* Gallery Upload Trigger Box */}
+            <button
+              id="btn-trigger-gallery-pick"
+              type="button"
+              onClick={() => {
+                if (photos.length < 5) {
+                  galleryInputRef.current?.click();
+                } else {
+                  setIsPhotoModalOpen(true);
+                }
+              }}
+              className="flex h-24 w-24 flex-shrink-0 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D0D9D4] bg-[#F9FBFA] text-[#014B43] hover:border-[#014B43] hover:bg-[#EBF2EE] active:scale-95 transition-all"
+            >
+              <ImageIcon className="h-6 w-6 stroke-[2]" />
+              <span className="mt-1 text-xs font-bold">앨범 선택</span>
+              <span className="text-[10px] text-[#6B7280]">갤러리에서</span>
             </button>
 
             {/* Uploaded Photos */}
@@ -191,8 +291,65 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 shadow-xs space-y-4">
             <h3 className="text-base font-bold text-[#1E2923]">
-              인계 장소
+              물품 및 인계 정보
             </h3>
+
+            {/* Category Selection */}
+            <div className="space-y-2">
+              <label
+                htmlFor="select-item-category"
+                className="text-xs font-semibold text-[#4B5563] flex items-center justify-between"
+              >
+                <span>물품 카테고리 선택</span>
+                <span className="rounded-full bg-[#EAF2EE] px-2.5 py-0.5 text-[11px] font-bold text-[#014B43]">
+                  {selectedCategory} (+{getMileageByCategory(selectedCategory)}P)
+                </span>
+              </label>
+
+              {/* Category Dropdown */}
+              <div className="relative">
+                <select
+                  id="select-item-category"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-[#D0D9D4] bg-[#F9FBFA] py-3 pl-3.5 pr-10 text-sm font-medium text-[#1E2923] focus:border-[#014B43] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#014B43]"
+                >
+                  {ITEM_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat} (+{getMileageByCategory(cat)}P)
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#014B43]">
+                  <ChevronDown className="h-5 w-5 stroke-[2.5]" />
+                </div>
+              </div>
+
+              {/* Quick Select Buttons */}
+              <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+                {ITEM_CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategory === cat;
+                  const pts = getMileageByCategory(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`rounded-lg py-2 px-1 text-center transition-all border ${
+                        isSelected
+                          ? 'border-[#014B43] bg-[#014B43] text-white font-bold shadow-2xs'
+                          : 'border-[#E5E9E7] bg-[#F9FBFA] text-[#4B5563] hover:border-[#014B43]/40 hover:bg-white'
+                      }`}
+                    >
+                      <span className="block text-[11px] leading-tight truncate">{cat}</span>
+                      <span className={`block text-[10px] font-semibold mt-0.5 ${isSelected ? 'text-[#A7F3D0]' : 'text-[#014B43]'}`}>
+                        +{pts}P
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Dorm Building Select */}
             <div className="space-y-1.5">
@@ -317,11 +474,11 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
           </div>
         </form>
 
-        {/* Drop-off Guide Reminder */}
+        {/* Handover Guide Reminder */}
         <div className="rounded-xl bg-[#EAF2EE] p-3 text-xs text-[#014B43] flex items-start gap-2">
           <Info className="h-4 w-4 text-[#014B43] flex-shrink-0 mt-0.5" />
           <p className="text-[11px] leading-relaxed text-[#014B43]/90">
-            등록 후 <span className="font-bold">기숙사 1층 무인 택배함 옆 '연근 수거함'</span>에 물품을 두시면 비대면 인계가 완료됩니다.
+            등록 후 <span className="font-bold">기숙사 현장 지정 거점 및 1층 로비</span>에서 안내된 일정에 맞춰 안전하게 물품을 인계하시면 됩니다.
           </p>
         </div>
       </div>

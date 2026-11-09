@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, ShieldCheck, Leaf, Award, LogOut } from 'lucide-react';
+import { User, ShieldCheck, Leaf, LogOut } from 'lucide-react';
 import { ItemRegistration, RewardRedemption, StudentUser } from '../types';
 
 interface ProfileScreenProps {
@@ -96,17 +96,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <p className="text-lg font-black text-[#1E2923]">{user.totalMileage.toLocaleString()}P</p>
             </div>
           </div>
-        </div>
-
-        {/* Eco Campaign Badge */}
-        <div className="rounded-2xl bg-[#F9DDCE]/70 border border-[#F6D5C3] p-4 text-xs text-[#6D4A20] space-y-1.5">
-          <p className="font-bold flex items-center gap-1.5">
-            <Award className="h-4 w-4" />
-            2026 연세 에코 캠퍼스 챌린지 참여 중
-          </p>
-          <p className="text-[11px] leading-relaxed text-[#6D4A20]/90">
-            기숙사 퇴소 기간 동안 자원 순환에 동참한 연세인에게 총장 명의 에코 마일리지 기여 인증서가 발급됩니다.
-          </p>
         </div>
 
         {/* Action Options */}
