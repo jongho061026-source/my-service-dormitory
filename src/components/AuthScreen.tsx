@@ -232,11 +232,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                   <input
                     id="input-yonsei-email"
                     type="text"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     value={emailPrefix}
                     onChange={(e) => setEmailPrefix(e.target.value)}
                     placeholder="student_id"
                     disabled={isSending || isVerifying}
-                    className="w-full rounded-xl border border-[#D0D9D4] bg-[#F9FBFA] py-2.5 pl-3 pr-2 text-sm text-[#1E2923] focus:border-[#014B43] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#014B43]"
+                    className="w-full rounded-xl border border-[#D0D9D4] bg-[#F9FBFA] py-2.5 pl-3 pr-2 text-sm text-[#1E2923] placeholder:text-[#9CA3AF] placeholder:opacity-100 placeholder:font-normal focus:border-[#014B43] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#014B43]"
                   />
                 </div>
                 <span className="text-xs font-semibold text-[#4B5563] whitespace-nowrap">
@@ -309,7 +313,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                   value={authCode}
                   onChange={(e) => setAuthCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="4자리 숫자 입력"
-                  className="w-full rounded-xl border border-[#014B43] bg-white py-3 px-3 text-center text-lg font-black tracking-widest text-[#014B43] focus:outline-none focus:ring-2 focus:ring-[#014B43]/20"
+                  className="w-full rounded-xl border border-[#014B43] bg-white py-3 px-3 text-center text-lg font-black tracking-widest text-[#014B43] placeholder:text-[#9CA3AF] placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#014B43]/20"
                 />
               </div>
             )}
