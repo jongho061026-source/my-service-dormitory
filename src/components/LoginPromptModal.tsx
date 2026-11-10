@@ -14,7 +14,7 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
   onClose,
   onGoToLogin,
   title = '연세 학우 로그인이 필요합니다',
-  description = '물품 인계 등록 및 500P 마일리지 적립은 연세대학교 웹메일 인증(로그인) 후 이용하실 수 있습니다.',
+  description = '나눔 물품 등록 및 마일리지 적립은 연세대학교 웹메일 인증(로그인) 후 이용하실 수 있습니다.',
 }) => {
   if (!isOpen) return null;
 
@@ -53,11 +53,11 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
           <ul className="text-[11px] text-[#4B5563] space-y-1 pl-1">
             <li className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#014B43]" />
-              기숙사 물품 무인 인계 등록 가능
+              기숙사 물품 나눔 등록 가능
             </li>
             <li className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#014B43]" />
-              인계 시 1건당 <strong className="text-[#014B43]">최대 500P 마일리지</strong> 즉시 적립
+              물품 나눔 시 <strong className="text-[#014B43]">카테고리별 마일리지</strong> 즉시 적립
             </li>
             <li className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#014B43]" />

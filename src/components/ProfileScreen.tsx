@@ -15,9 +15,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   redemptions,
   onLogout,
 }) => {
-  // Calculate eco impact
+  // Calculate user contributions
   const totalItems = registrations.length;
-  const co2SavedKg = (totalItems * 2.8).toFixed(1);
 
   return (
     <div className="min-h-[calc(100vh-7rem)] bg-[#F4F7F5] pb-28 pt-4 px-4">
@@ -82,18 +81,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             나의 에코 임팩트 기여도
           </h4>
 
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-2xl bg-[#F0F7F4] p-3 space-y-1">
-              <span className="text-[10px] font-semibold text-[#014B43]">인계 물품</span>
-              <p className="text-lg font-black text-[#014B43]">{totalItems}개</p>
+          <div className="grid grid-cols-2 gap-2.5 text-center">
+            <div className="rounded-2xl bg-[#F0F7F4] p-3.5 space-y-1">
+              <span className="text-[11px] font-semibold text-[#014B43]">나눔 물품</span>
+              <p className="text-xl font-black text-[#014B43]">{totalItems}개</p>
             </div>
-            <div className="rounded-2xl bg-[#FDF5F0] p-3 space-y-1">
-              <span className="text-[10px] font-semibold text-[#6D4A20]">CO2 절감</span>
-              <p className="text-lg font-black text-[#6D4A20]">{co2SavedKg}kg</p>
-            </div>
-            <div className="rounded-2xl bg-[#F3F4F6] p-3 space-y-1">
-              <span className="text-[10px] font-semibold text-[#4B5563]">누적 마일리지</span>
-              <p className="text-lg font-black text-[#1E2923]">{user.totalMileage.toLocaleString()}P</p>
+            <div className="rounded-2xl bg-[#F3F4F6] p-3.5 space-y-1">
+              <span className="text-[11px] font-semibold text-[#4B5563]">누적 마일리지</span>
+              <p className="text-xl font-black text-[#1E2923]">{user.totalMileage.toLocaleString()}P</p>
             </div>
           </div>
         </div>

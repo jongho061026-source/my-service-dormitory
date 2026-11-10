@@ -100,7 +100,7 @@ export const MileageInfoModal: React.FC<MileageInfoModalProps> = ({
 
           <div className="rounded-xl bg-[#F4F7F5] p-3 text-[11px] text-[#6B7280] leading-relaxed space-y-1">
             <p>• <strong>한 학기 최대 3,000P</strong>까지 적립 가능합니다. (물품 등록을 계속하더라도 마일리지는 최대 3,000P까지만 보유됩니다)</p>
-            <p>• 적립된 마일리지는 연세대학교 송도학사 행정실 또는 공지된 현장 거점에서 바로 교환 수령 가능합니다.</p>
+            <p>• 적립된 마일리지는 연세대학교 송도학사 행정실 앞 또는 공지된 현장 거점에서 바로 교환 수령 가능합니다.</p>
           </div>
 
           <button

@@ -52,7 +52,7 @@ export const MileageRewardScreen: React.FC<MileageRewardScreenProps> = ({
             <span className="text-2xl font-black">P</span>
           </div>
           <p className="text-[11px] text-[#757876]">
-            물품 인계 등록 시 카테고리별 최대 500P 적립
+            나눔 물품 등록 시 카테고리별 마일리지 적립
           </p>
         </div>
 
@@ -199,7 +199,7 @@ export const MileageRewardScreen: React.FC<MileageRewardScreenProps> = ({
 
         {/* Info Guide */}
         <div className="rounded-xl bg-[#F4F7F5] p-3 text-center text-xs text-[#757876]">
-          신청 완료 후 송도학사 행정실 또는 공지된 현장 거점에서 수령 가능합니다.
+          신청 완료 후 송도학사 행정실 앞 또는 공지된 현장 거점에서 수령 가능합니다.
         </div>
       </div>
 

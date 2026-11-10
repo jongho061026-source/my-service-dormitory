@@ -59,7 +59,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             <div className="mt-4 space-y-1">
               <h3 className="text-xl font-black tracking-tight">연근 마켓</h3>
               <p className="text-xs text-white/80">
-                연세대학교 기숙사 물품 인계 마켓
+                연세대학교 기숙사 물품 나눔 마켓
               </p>
             </div>
 
@@ -112,7 +112,7 @@ export const Drawer: React.FC<DrawerProps> = ({
               }`}
             >
               <Home className="h-5 w-5" />
-              <span>물품 인계 등록</span>
+              <span>나눔 물품 등록</span>
             </button>
 
             <button
@@ -138,7 +138,7 @@ export const Drawer: React.FC<DrawerProps> = ({
               }`}
             >
               <ReceiptText className="h-5 w-5" />
-              <span>나의 물품 인계 내역</span>
+              <span>나의 나눔 물품 내역</span>
             </button>
 
             <button
@@ -159,10 +159,10 @@ export const Drawer: React.FC<DrawerProps> = ({
           <div className="mx-4 mt-2 rounded-2xl bg-[#F9FBFA] border border-[#E5E9E7] p-3.5 space-y-2 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-[#014B43]">
               <MapPin className="h-4 w-4" />
-              <span>기숙사 물품 인계 안내</span>
+              <span>기숙사 물품 나눔 안내</span>
             </div>
             <p className="text-[11px] text-[#4B5563] leading-relaxed">
-              송도학사 기숙사 로비 및 공지된 현장 거점에서 안전하게 물품을 인계하실 수 있습니다.
+              송도학사 기숙사 로비 및 공지된 현장 거점에서 안전하게 물품을 나눔하실 수 있습니다.
             </p>
           </div>
         </div>
@@ -180,7 +180,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             </button>
           )}
           <div className="space-y-0.5">
-            <p className="font-semibold text-[#6B7280]">연세대학교 송도학사 기숙사 물품 인계</p>
+            <p className="font-semibold text-[#6B7280]">연세대학교 송도학사 기숙사 물품 나눔</p>
             <p>© 2026 연근 마켓</p>
           </div>
         </div>

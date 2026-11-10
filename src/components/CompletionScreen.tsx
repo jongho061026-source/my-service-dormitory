@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { Check, Leaf, MapPin, ArrowRight, Home, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Check, Leaf, MapPin, ArrowRight, Home, Sparkles, AlertTriangle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ItemRegistration, StudentUser } from '../types';
+import { MaxMileageAlertModal } from './MaxMileageAlertModal';
 
 interface CompletionScreenProps {
   user: StudentUser;
@@ -16,18 +17,24 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
   onGoToRewards,
   onGoToHome,
 }) => {
+  const earned = latestRegistration?.mileageEarned ?? 0;
+  const isZeroMileage = earned === 0;
+  const [isAlertOpen, setIsAlertOpen] = useState(isZeroMileage);
+
   useEffect(() => {
-    try {
-      confetti({
-        particleCount: 70,
-        spread: 60,
-        origin: { y: 0.35 },
-        colors: ['#014B43', '#6D4A20', '#F9DDCE', '#34D399'],
-      });
-    } catch {
-      // ignore
+    if (!isZeroMileage) {
+      try {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.35 },
+          colors: ['#014B43', '#6D4A20', '#F9DDCE', '#34D399'],
+        });
+      } catch {
+        // ignore
+      }
     }
-  }, []);
+  }, [isZeroMileage]);
 
   const dormName = latestRegistration?.dormBuilding || user.dormBuilding || '기숙사';
   const room = latestRegistration?.roomNumber || user.roomNumber || '301호';
@@ -45,29 +52,56 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
           </h2>
         </div>
 
-        {/* Card 1: 에코 마일리지 적립 */}
-        <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 text-center shadow-xs space-y-2">
-          <p className="text-xs font-semibold text-[#6B7280]">
-            {latestRegistration?.category ? `[${latestRegistration.category}] 에코 마일리지 적립` : '에코 마일리지 적립'}
-          </p>
-          <div className="flex items-center justify-center gap-2 py-1">
-            <Leaf className="h-7 w-7 fill-[#6D4A20] text-[#6D4A20]" />
-            <span className="text-3xl font-black tracking-tight text-[#6D4A20]">
-              +{latestRegistration?.mileageEarned ?? 500}P
-            </span>
+        {/* Card 1: 에코 마일리지 적립 or 한도 초과 안내 */}
+        {isZeroMileage ? (
+          <div className="rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-5 text-center shadow-xs space-y-2.5">
+            <div className="inline-flex items-center gap-1 rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-bold text-[#B45309]">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              학기 최대 마일리지(3,000P) 달성 완료
+            </div>
+            <p className="text-xs font-bold text-[#92400E]">
+              {latestRegistration?.category ? `[${latestRegistration.category}] 나눔 물품 등록 완료` : '나눔 물품 등록 완료'}
+            </p>
+            <div className="flex items-center justify-center gap-2 py-1">
+              <span className="text-3xl font-black tracking-tight text-[#B45309]">
+                0P (추가 적립 불가)
+              </span>
+            </div>
+            <p className="text-xs font-medium text-[#78350F] leading-relaxed px-2">
+              이번 학기 최대 적립 한도(3,000P)를 이미 모두 달성하여 마일리지가 추가 적립되지 않았습니다.<br />
+              마일리지는 지급되지 않지만, 학우를 위한 소중한 나눔에 진심으로 감사드립니다!
+            </p>
+            <div className="pt-1">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-[#92400E] border border-[#FDE68A]">
+                <Sparkles className="h-3 w-3 text-[#D97706]" />
+                현재 총 보유 마일리지: <strong className="font-extrabold">{user.totalMileage.toLocaleString()}P</strong> (최대 한도)
+              </span>
+            </div>
           </div>
-          <p className="text-xs font-medium text-[#4B5563]">
-            지구와 학우를 위한 따뜻한 나눔, 감사합니다.
-          </p>
-          <div className="pt-1">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F7F5] px-3 py-1 text-[11px] font-semibold text-[#014B43]">
-              <Sparkles className="h-3 w-3" />
-              현재 총 보유 마일리지: <strong className="font-extrabold">{user.totalMileage.toLocaleString()}P</strong>
-            </span>
+        ) : (
+          <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 text-center shadow-xs space-y-2">
+            <p className="text-xs font-semibold text-[#6B7280]">
+              {latestRegistration?.category ? `[${latestRegistration.category}] 에코 마일리지 적립` : '에코 마일리지 적립'}
+            </p>
+            <div className="flex items-center justify-center gap-2 py-1">
+              <Leaf className="h-7 w-7 fill-[#6D4A20] text-[#6D4A20]" />
+              <span className="text-3xl font-black tracking-tight text-[#6D4A20]">
+                +{earned}P
+              </span>
+            </div>
+            <p className="text-xs font-medium text-[#4B5563]">
+              지구와 학우를 위한 따뜻한 나눔, 감사합니다.
+            </p>
+            <div className="pt-1">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F7F5] px-3 py-1 text-[11px] font-semibold text-[#014B43]">
+                <Sparkles className="h-3 w-3" />
+                현재 총 보유 마일리지: <strong className="font-extrabold">{user.totalMileage.toLocaleString()}P</strong>
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Card 2: 기숙사 인계 안내 */}
+        {/* Card 2: 기숙사 나눔 안내 */}
         <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 shadow-xs space-y-2.5">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#EBF2EE] text-[#014B43]">
@@ -75,16 +109,16 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
             </div>
             <div className="space-y-1">
               <h3 className="text-sm font-bold text-[#1E2923]">
-                기숙사 인계 안내
+                기숙사 나눔 안내
               </h3>
               <p className="text-xs text-[#4B5563] leading-relaxed">
-                공지된 기숙사 현장 거점 및 1층 로비에서 안전하게 물품을 인계해주세요.
+                공지된 기숙사 현장 거점 및 1층 로비에서 안전하게 물품을 나눔해주세요.
               </p>
             </div>
           </div>
 
           <div className="mt-2 rounded-xl bg-[#F9FBFA] border border-[#E5E9E7] p-2.5 text-xs text-[#4B5563] flex items-center justify-between">
-            <span className="font-semibold text-[#014B43]">인계 등록 정보</span>
+            <span className="font-semibold text-[#014B43]">나눔 등록 정보</span>
             <span className="font-medium text-[#1E2923]">
               {dormName} {room}
             </span>
@@ -114,6 +148,16 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
           <span>홈으로 돌아가기</span>
         </button>
       </div>
+
+      {/* Maximum Mileage Warning Popup Modal */}
+      <MaxMileageAlertModal
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        title="학기 최대 마일리지(3,000P) 한도 도달 안내"
+        message="이번 학기 최대 적립 한도인 3,000P를 이미 모두 달성하여, 이번 물품 나눔 등록에 대해서는 마일리지가 추가 적립되지 않았습니다 (0P 적립)."
+        currentMileage={user.totalMileage}
+        confirmText="확인 완료"
+      />
     </div>
   );
 };

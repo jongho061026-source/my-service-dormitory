@@ -20,7 +20,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 mx-auto max-w-md border-t border-[#E5E9E7] bg-white px-4 py-1.5 shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 mx-auto max-w-md border-x border-t border-[#D0DAD4] bg-white px-4 py-1.5 shadow-lg">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive =

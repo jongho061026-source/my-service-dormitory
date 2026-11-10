@@ -26,7 +26,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-extrabold text-[#1E2923]">나의 이용 내역</h2>
           <span className="text-xs font-semibold text-[#014B43] bg-[#E7F0EC] px-2.5 py-1 rounded-full">
-            총 {registrations.length}건 인계 / {redemptions.length}건 교환
+            총 {registrations.length}건 나눔 / {redemptions.length}건 교환
           </span>
         </div>
 
@@ -41,7 +41,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 : 'hover:text-[#014B43]'
             }`}
           >
-            물품 인계 등록 ({registrations.length})
+            나눔 물품 등록 ({registrations.length})
           </button>
           <button
             type="button"
@@ -109,7 +109,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                           </span>
                         </div>
                         <h4 className="text-sm font-bold text-[#1E2923] line-clamp-1">
-                          {item.description || '기숙사 인계 물품'}
+                          {item.description || '기숙사 나눔 물품'}
                         </h4>
                         <p className="text-[11px] text-[#6B7280]">
                           {item.createdAt}
@@ -128,7 +128,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                   <div className="flex items-center justify-between border-t border-[#F0F3F1] pt-2.5 text-xs">
                     <span className="flex items-center gap-1 text-[11px] text-[#059669] font-medium">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      기숙사 현장 인계 완료
+                      기숙사 현장 나눔 완료
                     </span>
                     <span className="text-[10px] text-[#9CA3AF]">
                       사진 {item.photos.length}장 첨부됨

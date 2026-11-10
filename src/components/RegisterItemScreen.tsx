@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Camera, ChevronRight, Gift, ChevronDown, Plus, Sparkles, Check, Info, Lock, ShieldAlert, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Camera, ChevronRight, Gift, ChevronDown, Plus, Sparkles, Check, Info, Lock, ShieldAlert, Image as ImageIcon, Loader2, AlertTriangle } from 'lucide-react';
 import { ItemRegistration, StudentUser } from '../types';
 import { SONGDO_DORM_GROUPS, YONSEI_DORMS, ITEM_CATEGORIES, getMileageByCategory } from '../data/mockData';
 import { PhotoUploadModal } from './PhotoUploadModal';
 import { CameraCaptureModal } from './CameraCaptureModal';
 import { LoginPromptModal } from './LoginPromptModal';
+import { MaxMileageAlertModal } from './MaxMileageAlertModal';
 import { compressImageFile } from '../utils/imageCompressor';
 
 interface RegisterItemScreenProps {
@@ -24,6 +25,7 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isDirectCameraOpen, setIsDirectCameraOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [isMaxMileageModalOpen, setIsMaxMileageModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('전자기기');
   const [selectedDorm, setSelectedDorm] = useState(user.dormBuilding || '송도학사 제1기숙사 A동');
   const [roomNumber, setRoomNumber] = useState('');
@@ -93,78 +95,108 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
     }
 
     setErrorMsg('');
-    setIsSubmitting(true);
 
     const baseMileage = getMileageByCategory(selectedCategory);
     const remainingLimit = Math.max(0, 3000 - user.totalMileage);
     const actualPointsToEarn = Math.min(baseMileage, remainingLimit);
 
+    // If max semester mileage is already reached or no mileage can be earned, show warning modal first!
+    if (user.totalMileage >= 3000 || actualPointsToEarn === 0) {
+      setIsMaxMileageModalOpen(true);
+      return;
+    }
+
+    proceedRegistration(actualPointsToEarn);
+  };
+
+  const proceedRegistration = (pointsToEarn: number) => {
+    setIsSubmitting(true);
+    setErrorMsg('');
+
     setTimeout(() => {
       onSubmitRegistration({
         dormBuilding: selectedDorm,
         roomNumber: roomNumber.trim(),
-        description: description.trim() || `${selectedCategory} 인계 물품`,
+        description: description.trim() || `${selectedCategory} 나눔 물품`,
         category: selectedCategory,
         photos,
-        mileageEarned: actualPointsToEarn,
+        mileageEarned: pointsToEarn,
         status: 'PENDING_DROPOFF',
       });
       setIsSubmitting(false);
-    }, 400);
+      setIsMaxMileageModalOpen(false);
+    }, 350);
   };
 
   const baseCategoryMileage = getMileageByCategory(selectedCategory);
   const remainingMileageCapacity = Math.max(0, 3000 - user.totalMileage);
   const willEarn = Math.min(baseCategoryMileage, remainingMileageCapacity);
+  const isLimitReached = user.totalMileage >= 3000;
 
   return (
     <div className="min-h-[calc(100vh-7rem)] bg-[#F4F7F5] pb-24 pt-3 px-4">
       <div className="mx-auto max-w-md space-y-4">
-        {/* Top Peach Banner */}
-        <div
-          id="banner-mileage-notice"
-          onClick={onOpenMileageInfo}
-          role="button"
-          tabIndex={0}
-          className="flex cursor-pointer items-center justify-between rounded-2xl border border-[#F6D5C3] bg-[#F9DDCE] px-4 py-3.5 shadow-xs transition-all hover:bg-[#F5D2BF] active:scale-[0.99]"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[#014B43] text-white shadow-xs">
-              <Gift className="h-6 w-6 stroke-[2]" />
+        {/* Top Mileage Notice Banner */}
+        {isLimitReached ? (
+          <div
+            id="banner-mileage-notice"
+            onClick={() => setIsMaxMileageModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            className="flex cursor-pointer items-center justify-between rounded-2xl border border-[#FDE68A] bg-[#FEF3C7] px-4 py-3.5 shadow-xs transition-all hover:bg-[#FDE047]/30 active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[#D97706] text-white shadow-xs">
+                <AlertTriangle className="h-6 w-6 stroke-[2.2]" />
+              </div>
+              <div>
+                <h2 className="text-base font-extrabold text-[#92400E] tracking-tight flex items-center gap-1.5">
+                  학기 최대 마일리지(3,000P) 달성 완료
+                </h2>
+                <p className="text-xs font-semibold text-[#B45309]">
+                  추가 마일리지 적립 불가 (0P) • 물품 나눔 등록은 가능
+                </p>
+              </div>
             </div>
-            <div>
-              {user.totalMileage >= 3000 ? (
-                <>
-                  <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
-                    학기 최대 마일리지(3,000P) 달성 완료
-                  </h2>
-                  <p className="text-xs font-medium text-[#6D4A20]">
-                    최대 한도에 도달했습니다. (물품 등록은 정상 진행)
-                  </p>
-                </>
-              ) : remainingMileageCapacity < baseCategoryMileage ? (
-                <>
-                  <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
-                    {selectedCategory} 등록 시 +{willEarn}P 적립 (3,000P 한도)
-                  </h2>
-                  <p className="text-xs font-medium text-[#6D4A20]">
-                    학기 최대 한도까지 {willEarn}P 남았습니다.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
-                    {selectedCategory} 등록 시 +{willEarn}P 적립
-                  </h2>
-                  <p className="text-xs font-medium text-[#6D4A20]">
-                    보유: {user.totalMileage.toLocaleString()}P / 학기 최대 3,000P
-                  </p>
-                </>
-              )}
-            </div>
+            <ChevronRight className="h-5 w-5 text-[#92400E] stroke-[2.5]" />
           </div>
-          <ChevronRight className="h-5 w-5 text-[#6D4A20]/80 stroke-[2.5]" />
-        </div>
+        ) : (
+          <div
+            id="banner-mileage-notice"
+            onClick={onOpenMileageInfo}
+            role="button"
+            tabIndex={0}
+            className="flex cursor-pointer items-center justify-between rounded-2xl border border-[#F6D5C3] bg-[#F9DDCE] px-4 py-3.5 shadow-xs transition-all hover:bg-[#F5D2BF] active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[#014B43] text-white shadow-xs">
+                <Gift className="h-6 w-6 stroke-[2]" />
+              </div>
+              <div>
+                {remainingMileageCapacity < baseCategoryMileage ? (
+                  <>
+                    <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
+                      {selectedCategory} 등록 시 +{willEarn}P 적립 (3,000P 한도)
+                    </h2>
+                    <p className="text-xs font-medium text-[#6D4A20]">
+                      학기 최대 한도까지 {willEarn}P 남았습니다.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-base font-extrabold text-[#014B43] tracking-tight">
+                      {selectedCategory} 등록 시 +{willEarn}P 적립
+                    </h2>
+                    <p className="text-xs font-medium text-[#6D4A20]">
+                      보유: {user.totalMileage.toLocaleString()}P / 학기 최대 3,000P
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-[#6D4A20]/80 stroke-[2.5]" />
+          </div>
+        )}
 
         {/* Card 1: 물품 사진 첨부하기 matching Image 2 */}
         <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 shadow-xs space-y-3">
@@ -291,7 +323,7 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="rounded-2xl border border-[#E3E8E5] bg-white p-5 shadow-xs space-y-4">
             <h3 className="text-base font-bold text-[#1E2923]">
-              물품 및 인계 정보
+              물품 및 나눔 정보
             </h3>
 
             {/* Category Selection */}
@@ -301,9 +333,15 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
                 className="text-xs font-semibold text-[#4B5563] flex items-center justify-between"
               >
                 <span>물품 카테고리 선택</span>
-                <span className="rounded-full bg-[#EAF2EE] px-2.5 py-0.5 text-[11px] font-bold text-[#014B43]">
-                  {selectedCategory} (+{getMileageByCategory(selectedCategory)}P)
-                </span>
+                {isLimitReached ? (
+                  <span className="rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-bold text-[#B45309] border border-[#FDE68A]">
+                    {selectedCategory} (추가 적립 0P / 한도 달성)
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-[#EAF2EE] px-2.5 py-0.5 text-[11px] font-bold text-[#014B43]">
+                    {selectedCategory} (+{getMileageByCategory(selectedCategory)}P)
+                  </span>
+                )}
               </label>
 
               {/* Category Dropdown */}
@@ -316,7 +354,7 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
                 >
                   {ITEM_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
-                      {cat} (+{getMileageByCategory(cat)}P)
+                      {cat} {isLimitReached ? '(0P / 한도 달성)' : `(+${getMileageByCategory(cat)}P)`}
                     </option>
                   ))}
                 </select>
@@ -342,8 +380,18 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
                       }`}
                     >
                       <span className="block text-[11px] leading-tight truncate">{cat}</span>
-                      <span className={`block text-[10px] font-semibold mt-0.5 ${isSelected ? 'text-[#A7F3D0]' : 'text-[#014B43]'}`}>
-                        +{pts}P
+                      <span
+                        className={`block text-[10px] font-semibold mt-0.5 ${
+                          isLimitReached
+                            ? isSelected
+                              ? 'text-[#FEF3C7]'
+                              : 'text-[#9CA3AF]'
+                            : isSelected
+                            ? 'text-[#A7F3D0]'
+                            : 'text-[#014B43]'
+                        }`}
+                      >
+                        {isLimitReached ? '0P' : `+${pts}P`}
                       </span>
                     </button>
                   );
@@ -467,6 +515,11 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
                   <Lock className="h-4 w-4 stroke-[2.5]" />
                   <span>물품 등록하기 (학우 로그인 필요)</span>
                 </span>
+              ) : isLimitReached ? (
+                <span className="flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4 stroke-[2.2] text-[#FDE68A]" />
+                  <span>물품 나눔 등록하기 (마일리지 추가 적립 0P)</span>
+                </span>
               ) : (
                 '물품 등록하기'
               )}
@@ -478,7 +531,7 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
         <div className="rounded-xl bg-[#EAF2EE] p-3 text-xs text-[#014B43] flex items-start gap-2">
           <Info className="h-4 w-4 text-[#014B43] flex-shrink-0 mt-0.5" />
           <p className="text-[11px] leading-relaxed text-[#014B43]/90">
-            등록 후 <span className="font-bold">기숙사 현장 지정 거점 및 1층 로비</span>에서 안내된 일정에 맞춰 안전하게 물품을 인계하시면 됩니다.
+            등록 후 <span className="font-bold">기숙사 현장 지정 거점 및 1층 로비</span>에서 안내된 일정에 맞춰 안전하게 물품을 나눔하시면 됩니다.
           </p>
         </div>
       </div>
@@ -508,7 +561,19 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
         onClose={() => setIsLoginPromptOpen(false)}
         onGoToLogin={onNavigateToAuth}
         title="연세 학우 로그인이 필요합니다"
-        description="물품 인계 등록 및 500P 마일리지 적립은 연세대학교 학우 인증(웹메일 로그인) 후 이용하실 수 있습니다."
+        description="나눔 물품 등록 및 마일리지 적립은 연세대학교 학우 인증(웹메일 로그인) 후 이용하실 수 있습니다."
+      />
+
+      {/* Maximum Mileage Warning Popup Modal */}
+      <MaxMileageAlertModal
+        isOpen={isMaxMileageModalOpen}
+        onClose={() => setIsMaxMileageModalOpen(false)}
+        title="학기 최대 마일리지(3,000P) 한도 도달 안내"
+        message="이번 학기 최대 적립 한도인 3,000P를 이미 모두 달성하여, 이번 물품 나눔 등록 시 추가 마일리지가 적립되지 않습니다 (0P 적립). 마일리지 적립 없이 물품 나눔 등록을 완료하시겠습니까?"
+        currentMileage={user.totalMileage}
+        confirmText="마일리지 없이 나눔 등록하기"
+        showCancel={true}
+        onConfirm={() => proceedRegistration(0)}
       />
     </div>
   );

@@ -130,7 +130,7 @@ export default function App() {
 
     // Save to Firestore Database
     if (user) {
-      const addedPoints = typeof created.mileageEarned === 'number' ? created.mileageEarned : 500;
+      const addedPoints = typeof created.mileageEarned === 'number' ? created.mileageEarned : 0;
       const newTotalMileage = Math.min(3000, user.totalMileage + addedPoints);
 
       const updatedUser: StudentUser = {
@@ -206,76 +206,77 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F4F7F5] font-sans antialiased text-[#1E2923]">
-      {/* Top Header */}
-      <div className="mx-auto w-full max-w-md">
+    <div className="flex min-h-screen w-full flex-col items-center justify-start bg-[#DFE6E2] font-sans antialiased text-[#1E2923]">
+      {/* Mobile App Container Frame */}
+      <div className="relative flex min-h-screen w-full max-w-md flex-col bg-[#F4F7F5] shadow-[0_0_50px_rgba(0,0,0,0.08)] border-x border-[#D0DAD4]">
+        {/* Top Header */}
         <Header
           currentScreen={currentScreen}
           user={user}
           onOpenDrawer={() => setIsDrawerOpen(true)}
           onNavigate={handleNavigate}
         />
+
+        {/* Main Screen Content */}
+        <main className="w-full flex-1">
+          {currentScreen === 'auth' && (
+            <AuthScreen onAuthSuccess={handleAuthSuccess} />
+          )}
+
+          {currentScreen === 'register' && user && (
+            <RegisterItemScreen
+              user={user}
+              onSubmitRegistration={handleSubmitRegistration}
+              onOpenMileageInfo={() => setIsMileageInfoOpen(true)}
+              onNavigateToAuth={() => setCurrentScreen('auth')}
+            />
+          )}
+
+          {currentScreen === 'completion' && user && (
+            <CompletionScreen
+              user={user}
+              latestRegistration={latestRegistration}
+              onGoToRewards={() => handleNavigate('mileage')}
+              onGoToHome={() => handleNavigate('register')}
+            />
+          )}
+
+          {currentScreen === 'mileage' && user && (
+            <MileageRewardScreen
+              user={user}
+              onConfirmRedemption={handleConfirmRedemption}
+              onNavigateToHistory={() => handleNavigate('history')}
+            />
+          )}
+
+          {currentScreen === 'history' && user && (
+            <HistoryScreen
+              user={user}
+              registrations={registrations}
+              redemptions={redemptions}
+              onNavigateToRegister={() => handleNavigate('register')}
+              onNavigateToMileage={() => handleNavigate('mileage')}
+            />
+          )}
+
+          {currentScreen === 'profile' && user && (
+            <ProfileScreen
+              user={user}
+              registrations={registrations}
+              redemptions={redemptions}
+              onLogout={handleLogout}
+            />
+          )}
+        </main>
+
+        {/* Bottom Navigation (shown on main screens when authenticated) */}
+        {currentScreen !== 'auth' && user && (
+          <BottomNav
+            currentScreen={currentScreen}
+            onNavigate={handleNavigate}
+          />
+        )}
       </div>
-
-      {/* Main Screen Content */}
-      <main className="mx-auto w-full max-w-md flex-1">
-        {currentScreen === 'auth' && (
-          <AuthScreen onAuthSuccess={handleAuthSuccess} />
-        )}
-
-        {currentScreen === 'register' && user && (
-          <RegisterItemScreen
-            user={user}
-            onSubmitRegistration={handleSubmitRegistration}
-            onOpenMileageInfo={() => setIsMileageInfoOpen(true)}
-            onNavigateToAuth={() => setCurrentScreen('auth')}
-          />
-        )}
-
-        {currentScreen === 'completion' && user && (
-          <CompletionScreen
-            user={user}
-            latestRegistration={latestRegistration}
-            onGoToRewards={() => handleNavigate('mileage')}
-            onGoToHome={() => handleNavigate('register')}
-          />
-        )}
-
-        {currentScreen === 'mileage' && user && (
-          <MileageRewardScreen
-            user={user}
-            onConfirmRedemption={handleConfirmRedemption}
-            onNavigateToHistory={() => handleNavigate('history')}
-          />
-        )}
-
-        {currentScreen === 'history' && user && (
-          <HistoryScreen
-            user={user}
-            registrations={registrations}
-            redemptions={redemptions}
-            onNavigateToRegister={() => handleNavigate('register')}
-            onNavigateToMileage={() => handleNavigate('mileage')}
-          />
-        )}
-
-        {currentScreen === 'profile' && user && (
-          <ProfileScreen
-            user={user}
-            registrations={registrations}
-            redemptions={redemptions}
-            onLogout={handleLogout}
-          />
-        )}
-      </main>
-
-      {/* Bottom Navigation (shown on main screens when authenticated) */}
-      {currentScreen !== 'auth' && user && (
-        <BottomNav
-          currentScreen={currentScreen}
-          onNavigate={handleNavigate}
-        />
-      )}
 
       {/* Side Navigation Drawer */}
       <Drawer
