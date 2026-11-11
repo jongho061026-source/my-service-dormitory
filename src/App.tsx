@@ -87,7 +87,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     const earned = registrations.reduce(
-      (sum, r) => sum + (typeof r.mileageEarned === 'number' ? r.mileageEarned : 500),
+      (sum, r) => sum + (typeof r.mileageEarned === 'number' ? r.mileageEarned : 0),
       0
     );
     const spent = redemptions.reduce((sum, r) => sum + (r.pointsSpent || 0), 0);
@@ -119,8 +119,18 @@ export default function App() {
       .toString()
       .padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
+    // Calculate cumulative earned points across all registrations
+    const totalEarnedSoFar = registrations.reduce(
+      (sum, r) => sum + (typeof r.mileageEarned === 'number' ? r.mileageEarned : 0),
+      0
+    );
+    // If user already reached 3,000P semester limit, any subsequent registration strictly earns 0P
+    const remainingCap = Math.max(0, 3000 - Math.max(user ? user.totalMileage : 0, totalEarnedSoFar));
+    const safePointsEarned = Math.min(newReg.mileageEarned ?? 0, remainingCap);
+
     const created: ItemRegistration = {
       ...newReg,
+      mileageEarned: safePointsEarned,
       id: `reg-${Date.now()}`,
       createdAt: formattedDate,
     };
@@ -130,8 +140,7 @@ export default function App() {
 
     // Save to Firestore Database
     if (user) {
-      const addedPoints = typeof created.mileageEarned === 'number' ? created.mileageEarned : 0;
-      const newTotalMileage = Math.min(3000, user.totalMileage + addedPoints);
+      const newTotalMileage = Math.min(3000, user.totalMileage + safePointsEarned);
 
       const updatedUser: StudentUser = {
         ...user,
@@ -226,6 +235,7 @@ export default function App() {
           {currentScreen === 'register' && user && (
             <RegisterItemScreen
               user={user}
+              registrations={registrations}
               onSubmitRegistration={handleSubmitRegistration}
               onOpenMileageInfo={() => setIsMileageInfoOpen(true)}
               onNavigateToAuth={() => setCurrentScreen('auth')}

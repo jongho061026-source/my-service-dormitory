@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ReceiptText, Gift, Leaf, MapPin, Calendar, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ReceiptText, Gift, Leaf, MapPin, Calendar, Clock, CheckCircle2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { ItemRegistration, RewardRedemption, StudentUser } from '../types';
 
 interface HistoryScreenProps {
@@ -18,6 +18,28 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   onNavigateToMileage,
 }) => {
   const [activeTab, setActiveTab] = useState<'items' | 'rewards'>('items');
+
+  // Calculate effective mileage earned for each item chronologically (oldest to newest)
+  // Capped strictly at 3,000P semester limit. Once 3,000P is reached, all subsequent items earn +0P.
+  const effectivePointsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const sorted = [...registrations].sort((a, b) => {
+      const timeA = a.id.startsWith('reg-') ? parseInt(a.id.replace('reg-', ''), 10) : 0;
+      const timeB = b.id.startsWith('reg-') ? parseInt(b.id.replace('reg-', ''), 10) : 0;
+      if (timeA && timeB) return timeA - timeB;
+      return a.createdAt.localeCompare(b.createdAt);
+    });
+
+    let cumulative = 0;
+    for (const item of sorted) {
+      const raw = typeof item.mileageEarned === 'number' ? item.mileageEarned : 0;
+      const remaining = Math.max(0, 3000 - cumulative);
+      const effective = Math.min(raw, remaining);
+      map.set(item.id, effective);
+      cumulative += effective;
+    }
+    return map;
+  }, [registrations]);
 
   return (
     <div className="min-h-[calc(100vh-7rem)] bg-[#F4F7F5] pb-28 pt-4 px-4">
@@ -117,12 +139,28 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <span className="inline-flex items-center gap-1 text-sm font-extrabold text-[#6D4A20]">
-                        <Leaf className="h-3.5 w-3.5 fill-[#6D4A20]" />
-                        +{item.mileageEarned}P
-                      </span>
-                    </div>
+                    {(() => {
+                      const points = effectivePointsMap.get(item.id) ?? (typeof item.mileageEarned === 'number' ? item.mileageEarned : 0);
+                      const isZero = points === 0;
+
+                      return (
+                        <div className="text-right flex flex-col items-end">
+                          <span
+                            className={`inline-flex items-center gap-1 text-sm font-black ${
+                              isZero ? 'text-[#9CA3AF]' : 'text-[#6D4A20]'
+                            }`}
+                          >
+                            <Leaf className={`h-3.5 w-3.5 ${isZero ? 'text-[#9CA3AF]' : 'fill-[#6D4A20] text-[#6D4A20]'}`} />
+                            +{points}P
+                          </span>
+                          {isZero && (
+                            <span className="mt-0.5 rounded bg-[#FEF3C7] px-1.5 py-0.5 text-[9px] font-bold text-[#B45309]">
+                              한도 달성 (0P)
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex items-center justify-between border-t border-[#F0F3F1] pt-2.5 text-xs">

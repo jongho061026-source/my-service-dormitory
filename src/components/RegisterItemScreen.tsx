@@ -10,6 +10,7 @@ import { compressImageFile } from '../utils/imageCompressor';
 
 interface RegisterItemScreenProps {
   user: StudentUser;
+  registrations?: ItemRegistration[];
   onSubmitRegistration: (registration: Omit<ItemRegistration, 'id' | 'createdAt'>) => void;
   onOpenMileageInfo: () => void;
   onNavigateToAuth: () => void;
@@ -17,6 +18,7 @@ interface RegisterItemScreenProps {
 
 export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
   user,
+  registrations = [],
   onSubmitRegistration,
   onOpenMileageInfo,
   onNavigateToAuth,
@@ -96,12 +98,16 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
 
     setErrorMsg('');
 
+    const totalEarnedSoFar = registrations.reduce(
+      (sum, r) => sum + (typeof r.mileageEarned === 'number' ? r.mileageEarned : 0),
+      0
+    );
+    const remainingLimit = Math.max(0, 3000 - Math.max(user.totalMileage, totalEarnedSoFar));
     const baseMileage = getMileageByCategory(selectedCategory);
-    const remainingLimit = Math.max(0, 3000 - user.totalMileage);
-    const actualPointsToEarn = Math.min(baseMileage, remainingLimit);
+    const actualPointsToEarn = remainingLimit === 0 ? 0 : Math.min(baseMileage, remainingLimit);
 
     // If max semester mileage is already reached or no mileage can be earned, show warning modal first!
-    if (user.totalMileage >= 3000 || actualPointsToEarn === 0) {
+    if (user.totalMileage >= 3000 || totalEarnedSoFar >= 3000 || actualPointsToEarn === 0) {
       setIsMaxMileageModalOpen(true);
       return;
     }
@@ -113,6 +119,13 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
     setIsSubmitting(true);
     setErrorMsg('');
 
+    const totalEarnedSoFar = registrations.reduce(
+      (sum, r) => sum + (typeof r.mileageEarned === 'number' ? r.mileageEarned : 0),
+      0
+    );
+    const remainingLimit = Math.max(0, 3000 - Math.max(user.totalMileage, totalEarnedSoFar));
+    const safePoints = remainingLimit === 0 ? 0 : Math.min(pointsToEarn, remainingLimit);
+
     setTimeout(() => {
       onSubmitRegistration({
         dormBuilding: selectedDorm,
@@ -120,7 +133,7 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
         description: description.trim() || `${selectedCategory} 나눔 물품`,
         category: selectedCategory,
         photos,
-        mileageEarned: pointsToEarn,
+        mileageEarned: safePoints,
         status: 'PENDING_DROPOFF',
       });
       setIsSubmitting(false);
@@ -128,10 +141,14 @@ export const RegisterItemScreen: React.FC<RegisterItemScreenProps> = ({
     }, 350);
   };
 
+  const totalEarnedSoFar = registrations.reduce(
+    (sum, r) => sum + (typeof r.mileageEarned === 'number' ? r.mileageEarned : 0),
+    0
+  );
+  const remainingMileageCapacity = Math.max(0, 3000 - Math.max(user.totalMileage, totalEarnedSoFar));
   const baseCategoryMileage = getMileageByCategory(selectedCategory);
-  const remainingMileageCapacity = Math.max(0, 3000 - user.totalMileage);
   const willEarn = Math.min(baseCategoryMileage, remainingMileageCapacity);
-  const isLimitReached = user.totalMileage >= 3000;
+  const isLimitReached = remainingMileageCapacity === 0 || user.totalMileage >= 3000 || totalEarnedSoFar >= 3000;
 
   return (
     <div className="min-h-[calc(100vh-7rem)] bg-[#F4F7F5] pb-24 pt-3 px-4">
